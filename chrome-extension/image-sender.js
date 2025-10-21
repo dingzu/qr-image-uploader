@@ -281,6 +281,13 @@
             <span>正在生成二维码...</span>
           </div>
           
+          <div class="qr-image-sender-progress-container" style="display: none;">
+            <div class="qr-image-sender-progress-bar">
+              <div class="qr-image-sender-progress-fill"></div>
+            </div>
+            <div class="qr-image-sender-progress-text">传输中... 0%</div>
+          </div>
+          
           <div class="qr-image-sender-hint">
             扫码后图片会自动下载到手机
           </div>
@@ -496,6 +503,38 @@
             statusEl.className = 'qr-image-sender-status waiting';
             statusEl.innerHTML = '<span class="qr-image-sender-loading"></span><span>手机已连接，正在传输...</span>';
           }
+          
+          // 显示进度条
+          const progressContainer = document.querySelector('.qr-image-sender-progress-container');
+          if (progressContainer) {
+            progressContainer.style.display = 'block';
+          }
+        });
+        
+        // 监听传输开始
+        socket.on('image-transfer-start', (data) => {
+          console.log('Image Sender: 开始传输，总块数:', data.totalChunks);
+          
+          const progressContainer = document.querySelector('.qr-image-sender-progress-container');
+          if (progressContainer) {
+            progressContainer.style.display = 'block';
+          }
+        });
+        
+        // 监听传输进度（用于估算）
+        let transferStartTime = Date.now();
+        socket.on('image-chunk', (data) => {
+          const progress = Math.round(((data.chunkIndex + 1) / data.totalChunks) * 100);
+          console.log('Image Sender: 传输进度:', progress + '%');
+          
+          // 更新进度条（估算发送进度）
+          const progressFill = document.querySelector('.qr-image-sender-progress-fill');
+          const progressText = document.querySelector('.qr-image-sender-progress-text');
+          
+          if (progressFill && progressText) {
+            progressFill.style.width = progress + '%';
+            progressText.textContent = `传输中... ${progress}%`;
+          }
         });
         
         // 监听图片成功发送到手机
@@ -507,6 +546,23 @@
           if (statusEl) {
             statusEl.className = 'qr-image-sender-status success';
             statusEl.innerHTML = '<span>✓</span><span>图片已发送到手机！</span>';
+          }
+          
+          // 隐藏进度条，显示 100%
+          const progressFill = document.querySelector('.qr-image-sender-progress-fill');
+          const progressText = document.querySelector('.qr-image-sender-progress-text');
+          const progressContainer = document.querySelector('.qr-image-sender-progress-container');
+          
+          if (progressFill && progressText) {
+            progressFill.style.width = '100%';
+            progressText.textContent = '传输完成！';
+            
+            // 2秒后隐藏进度条
+            setTimeout(() => {
+              if (progressContainer) {
+                progressContainer.style.display = 'none';
+              }
+            }, 2000);
           }
         });
         
@@ -708,6 +764,34 @@
         text-align: center;
         color: #999;
         font-size: 12px;
+      }
+      
+      .qr-image-sender-progress-container {
+        margin-bottom: 12px;
+      }
+      
+      .qr-image-sender-progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e0e0e0;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 8px;
+      }
+      
+      .qr-image-sender-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4CAF50, #45a049);
+        border-radius: 4px;
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+      
+      .qr-image-sender-progress-text {
+        text-align: center;
+        color: #666;
+        font-size: 13px;
+        font-weight: 500;
       }
       
       @media (max-width: 600px) {

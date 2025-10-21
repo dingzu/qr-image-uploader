@@ -99,7 +99,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 浏览器发送图片到手机
+  // 浏览器发送图片到手机（支持分块传输）
   socket.on('send-image-to-phone', ({ roomId, imageData }) => {
     console.log(`发送图片到手机，房间: ${roomId}，图片大小: ${Math.round(imageData.length / 1024)}KB`);
     
@@ -119,7 +119,35 @@ io.on('connection', (socket) => {
     const clientCount = clientsInRoom ? clientsInRoom.size : 0;
     console.log(`房间 ${roomId} 当前有 ${clientCount} 个客户端`);
     
-    io.to(roomId).emit('image-sent-to-phone', { imageData });
+    // 分块发送大图片
+    const CHUNK_SIZE = 50000; // 每块 50KB
+    if (imageData.length > CHUNK_SIZE) {
+      console.log(`图片较大，开始分块传输，总大小: ${Math.round(imageData.length / 1024)}KB`);
+      
+      const totalChunks = Math.ceil(imageData.length / CHUNK_SIZE);
+      
+      // 通知开始传输
+      io.to(roomId).emit('image-transfer-start', { totalChunks, totalSize: imageData.length });
+      
+      // 分块发送
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, imageData.length);
+        const chunk = imageData.substring(start, end);
+        
+        io.to(roomId).emit('image-chunk', {
+          chunkIndex: i,
+          totalChunks: totalChunks,
+          chunk: chunk,
+          isLastChunk: i === totalChunks - 1
+        });
+      }
+      
+      console.log(`分块传输完成，共 ${totalChunks} 块`);
+    } else {
+      // 小图片直接发送
+      io.to(roomId).emit('image-sent-to-phone', { imageData });
+    }
     
     // 通知发送者成功
     socket.emit('image-send-success');
