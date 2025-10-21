@@ -455,10 +455,12 @@
       let imageSent = false;
       let roomJoined = false;
       
-      // 连接到服务器（禁用自动重连，因为图片传输是一次性的）
+      // 连接到服务器
       const socket = io(serverUrl, {
         transports: ['websocket', 'polling'],
-        reconnection: false
+        reconnection: true,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 1000
       });
       
       // 连接超时处理
@@ -479,6 +481,9 @@
           statusEl.className = 'qr-image-sender-status success';
           statusEl.innerHTML = '<span>✓</span><span>使用 KIM 扫码</span>';
         }
+        
+        // 图片已成功存储到服务器，resolve Promise
+        resolve();
       });
       
       // 监听手机端扫码加入房间的通知
@@ -580,7 +585,7 @@
             imageData: imageData
           });
           imageSent = true;
-          resolve();
+          // 注意：不在这里 resolve，而是等待 image-send-success 事件
         } else {
           console.log('Image Sender: 图片已发送，跳过重复发送');
         }
