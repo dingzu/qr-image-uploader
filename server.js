@@ -124,7 +124,71 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 浏览器发送图片到手机（支持分块传输）
+  // 浏览器端分块发送图片
+  socket.on('send-image-chunk', ({ roomId, chunkIndex, totalChunks, chunk, isLastChunk }) => {
+    console.log(`收到图片分块，房间: ${roomId}, 块: ${chunkIndex + 1}/${totalChunks}`);
+    
+    // 初始化房间的分块接收器
+    if (!rooms.has(roomId)) {
+      rooms.set(roomId, {
+        chunks: new Array(totalChunks),
+        totalChunks: totalChunks,
+        receivedChunks: 0,
+        timestamp: Date.now()
+      });
+      console.log(`创建房间 ${roomId}，准备接收 ${totalChunks} 个分块`);
+    }
+    
+    const room = rooms.get(roomId);
+    room.chunks[chunkIndex] = chunk;
+    room.receivedChunks++;
+    
+    console.log(`房间 ${roomId} 已接收 ${room.receivedChunks}/${totalChunks} 个分块`);
+    
+    // 所有分块接收完成
+    if (isLastChunk && room.receivedChunks === totalChunks) {
+      console.log(`房间 ${roomId} 所有分块接收完成，开始组合`);
+      
+      // 组合所有分块
+      const fullImageData = room.chunks.join('');
+      console.log(`组合完成，总大小: ${Math.round(fullImageData.length / 1024)}KB`);
+      
+      // 存储完整图片
+      room.imageData = fullImageData;
+      
+      // 通知发送者成功
+      socket.emit('image-send-success');
+      
+      // 准备分块给手机端
+      const CHUNK_SIZE = 100000;
+      if (fullImageData.length > CHUNK_SIZE) {
+        const totalChunksForPhone = Math.ceil(fullImageData.length / CHUNK_SIZE);
+        room.totalChunks = totalChunksForPhone;
+        room.chunks = [];
+        
+        for (let i = 0; i < totalChunksForPhone; i++) {
+          const start = i * CHUNK_SIZE;
+          const end = Math.min(start + CHUNK_SIZE, fullImageData.length);
+          room.chunks.push(fullImageData.substring(start, end));
+        }
+        
+        console.log(`为手机端准备了 ${totalChunksForPhone} 个分块`);
+        
+        // 通知手机端
+        socket.to(roomId).emit('new-image-available', {
+          totalChunks: totalChunksForPhone,
+          totalSize: fullImageData.length,
+          isChunked: true
+        });
+      } else {
+        // 小图片直接发送
+        socket.to(roomId).emit('new-image-available', { isChunked: false });
+        socket.to(roomId).emit('image-sent-to-phone', { imageData: fullImageData });
+      }
+    }
+  });
+  
+  // 浏览器发送图片到手机（支持分块传输）- 兼容小图片直接发送
   socket.on('send-image-to-phone', ({ roomId, imageData }) => {
     console.log(`发送图片到手机，房间: ${roomId}，图片大小: ${Math.round(imageData.length / 1024)}KB`);
     

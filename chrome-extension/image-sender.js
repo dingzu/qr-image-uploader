@@ -425,6 +425,47 @@
     return 'IMG_' + Math.random().toString(36).substring(2, 10).toUpperCase();
   }
   
+  // 分块发送图片
+  function sendImageInChunks(socket, roomId, imageData) {
+    const CHUNK_SIZE = 50000;
+    const totalChunks = Math.ceil(imageData.length / CHUNK_SIZE);
+    
+    console.log(`Image Sender: 开始分块发送，总共 ${totalChunks} 块`);
+    
+    let sentChunks = 0;
+    
+    function sendNextChunk() {
+      if (sentChunks >= totalChunks) {
+        console.log('Image Sender: ✓ 所有分块已发送');
+        return;
+      }
+      
+      const start = sentChunks * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, imageData.length);
+      const chunk = imageData.substring(start, end);
+      const isLastChunk = sentChunks === totalChunks - 1;
+      
+      console.log(`Image Sender: → 发送分块 ${sentChunks + 1}/${totalChunks}`);
+      
+      socket.emit('send-image-chunk', {
+        roomId: roomId,
+        chunkIndex: sentChunks,
+        totalChunks: totalChunks,
+        chunk: chunk,
+        isLastChunk: isLastChunk
+      });
+      
+      sentChunks++;
+      
+      // 延迟发送下一块，避免过快
+      if (!isLastChunk) {
+        setTimeout(sendNextChunk, 50); // 50ms 延迟
+      }
+    }
+    
+    sendNextChunk();
+  }
+  
   // 等待手机扫码后连接并发送图片
   async function waitForPhoneAndSendImage(serverUrl, roomId, imageData, statusEl) {
     return new Promise((resolve, reject) => {
@@ -473,13 +514,24 @@
           progressContainer.style.display = 'block';
         }
         
-        // 发送图片
-        console.log('Image Sender: → 发送 send-image-to-phone 事件，图片大小:', Math.round(imageData.length / 1024), 'KB');
-        socket.emit('send-image-to-phone', {
-          roomId: roomId,
-          imageData: imageData
-        });
-        console.log('Image Sender: send-image-to-phone 事件已发送');
+        // 发送图片（分块发送，避免数据过大）
+        const imageSize = Math.round(imageData.length / 1024);
+        console.log('Image Sender: 准备发送图片，大小:', imageSize, 'KB');
+        
+        const CHUNK_SIZE = 50000; // 50KB per chunk
+        if (imageData.length > CHUNK_SIZE) {
+          // 大图片，分块发送
+          console.log('Image Sender: 图片较大，采用分块发送');
+          sendImageInChunks(socket, roomId, imageData);
+        } else {
+          // 小图片，直接发送
+          console.log('Image Sender: → 发送 send-image-to-phone 事件');
+          socket.emit('send-image-to-phone', {
+            roomId: roomId,
+            imageData: imageData
+          });
+          console.log('Image Sender: send-image-to-phone 事件已发送');
+        }
       });
       
       // 监听发送成功
