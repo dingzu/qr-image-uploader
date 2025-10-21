@@ -532,7 +532,38 @@
     });
 
     socket.on('receive-room-not-found', () => {
+      console.error('房间不存在');
       updateStatus('房间不存在，请重新扫码', 'error');
+    });
+    
+    // 监听新图片到达通知（PC 端发送图片后主动通知）
+    socket.on('new-image-available', (data) => {
+      console.log('← 收到新图片通知:', JSON.stringify(data));
+      
+      if (data.isChunked) {
+        // 大图片，分块传输
+        console.log('📦 新图片分块传输，总块数:', data.totalChunks, '总大小:', Math.round(data.totalSize / 1024) + 'KB');
+        totalChunks = data.totalChunks;
+        receivedChunks = new Array(totalChunks);
+        
+        // 显示进度条
+        progressContainer.style.display = 'block';
+        progressFill.style.width = '0%';
+        progressText.textContent = '接收中... 0%';
+        
+        updateStatus('正在接收图片...', 'waiting');
+        
+        // 请求第一个分块
+        console.log('→ 请求第一个分块 (0/' + data.totalChunks + ')');
+        socket.emit('request-next-chunk', {
+          roomId: roomId,
+          chunkIndex: 0
+        });
+      } else {
+        // 小图片，等待直接传输（会立即收到 image-sent-to-phone）
+        console.log('📄 新图片（小图），等待直接传输');
+        updateStatus('正在接收图片...', 'waiting');
+      }
     });
 
     // 监听传输开始

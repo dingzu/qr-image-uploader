@@ -170,18 +170,21 @@ io.on('connection', (socket) => {
         room.chunks.push(imageData.substring(start, end));
       }
       
-      console.log(`图片已切分为 ${totalChunks} 块，等待接收端请求`);
+      console.log(`图片已切分为 ${totalChunks} 块，通知接收端`);
       
-      // 通知房间内的所有客户端：开始传输
-      io.to(roomId).emit('image-transfer-start', { 
+      // 通知房间内所有手机端：有新图片到达，请查询
+      socket.to(roomId).emit('new-image-available', { 
         totalChunks: totalChunks, 
         totalSize: imageData.length,
-        chunkSize: CHUNK_SIZE
+        isChunked: true
       });
     } else {
       // 小图片直接发送
-      console.log(`图片较小，直接传输`);
-      io.to(roomId).emit('image-sent-to-phone', { imageData });
+      console.log(`图片较小，直接发送到房间`);
+      socket.to(roomId).emit('new-image-available', {
+        isChunked: false
+      });
+      socket.to(roomId).emit('image-sent-to-phone', { imageData });
     }
     
     // 通知发送者成功
