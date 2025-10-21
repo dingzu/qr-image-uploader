@@ -4,10 +4,16 @@
 
   let modalOpen = false;
   let currentFileInput = null;
+  let allowNativeClick = false; // 标记是否允许原生文件选择
 
   // 监听所有 input[type=file] 的点击
   document.addEventListener('click', function(e) {
     const target = e.target;
+    
+    // 如果允许原生点击，不拦截
+    if (allowNativeClick) {
+      return;
+    }
     
     // 如果元素有忽略标记,不处理
     if (target.closest('[data-qr-upload-ignore]')) {
@@ -77,6 +83,11 @@
     
     input.addEventListener('click', function(e) {
       console.log('QR Upload: input 直接点击事件', input);
+      // 如果允许原生点击，不拦截
+      if (allowNativeClick) {
+        console.log('QR Upload: 允许原生文件选择');
+        return;
+      }
       handleFileInput(e, input);
     }, true);
   }
@@ -98,6 +109,12 @@
   }
 
   function handleFileInput(e, input) {
+    // 如果允许原生点击，不拦截
+    if (allowNativeClick) {
+      console.log('QR Upload: 允许原生文件选择，跳过拦截');
+      return;
+    }
+    
     // 检查是否接受图片
     const accept = input.accept || '';
     
@@ -160,7 +177,7 @@
 
           <div class="qr-upload-qr-section" id="qr-upload-qr-section" style="display: none;">
             <div class="qr-upload-back" id="qr-upload-back">← 返回</div>
-            <iframe id="qr-upload-iframe" style="width: 100%; height: 600px; border: none;"></iframe>
+            <iframe id="qr-upload-iframe" style="width: 100%; height: 500px; border: none; background: white;"></iframe>
           </div>
         </div>
       </div>
@@ -190,10 +207,15 @@
       
       // 获取配置的 URL
       const result = await chrome.storage.sync.get(['uploadUrl']);
-      const uploadUrl = result.uploadUrl || 'https://qr-image-uploader.onrender.com/';
+      let uploadUrl = result.uploadUrl || 'https://qr-image-uploader.onrender.com/';
       
-      // 加载 PC 页面
-      iframe.src = uploadUrl;
+      // 确保 URL 以 / 结尾
+      if (!uploadUrl.endsWith('/')) {
+        uploadUrl += '/';
+      }
+      
+      // 使用专门的插件页面（更简洁）
+      iframe.src = uploadUrl + 'plugin.html';
 
       // 监听来自 iframe 的消息
       window.addEventListener('message', handleIframeMessage);
@@ -202,14 +224,25 @@
     // 本地上传
     localBtn.onclick = function() {
       closeModal();
-      // 触发原始文件选择
-      if (currentFileInput) {
-        const newEvent = new MouseEvent('click', {
-          bubbles: true,
-          cancelable: false
-        });
-        currentFileInput.dispatchEvent(newEvent);
-      }
+      
+      // 延迟触发，确保模态框完全关闭
+      setTimeout(() => {
+        if (currentFileInput) {
+          console.log('QR Upload: 触发本地文件选择');
+          
+          // 设置标记，允许原生点击
+          allowNativeClick = true;
+          
+          // 触发原始文件选择
+          currentFileInput.click();
+          
+          // 重置标记（延迟重置，确保点击事件完成）
+          setTimeout(() => {
+            allowNativeClick = false;
+            console.log('QR Upload: 已重置拦截标记');
+          }, 100);
+        }
+      }, 100);
     };
 
     // 返回按钮

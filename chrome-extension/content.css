@@ -33,12 +33,12 @@
 
 .qr-upload-modal-content {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 32px;
-  max-width: 500px;
+  max-width: 520px;
   width: 90%;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
   position: relative;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: qr-slide-up 0.3s ease-out;
@@ -131,24 +131,34 @@
 
 .qr-upload-qr-section {
   margin-top: 20px;
+  overflow: hidden;
 }
 
 .qr-upload-back {
   display: inline-block;
   padding: 8px 16px;
   margin-bottom: 16px;
-  background: #f0f0f0;
-  border: none;
-  border-radius: 6px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
-  color: #333;
+  font-weight: 500;
+  color: #666;
   transition: all 0.2s;
 }
 
 .qr-upload-back:hover {
-  background: #e0e0e0;
-  color: #000;
+  background: #000;
+  border-color: #000;
+  color: white;
+  transform: translateX(-2px);
+}
+
+/* iframe 容器样式优化 */
+.qr-upload-qr-section iframe {
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 /* 响应式设计 */

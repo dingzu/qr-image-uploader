@@ -187,6 +187,16 @@
       line-height: 1.6;
     }
 
+    .info-box-content code,
+    .hint code {
+      background: #e8e8e8;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #333;
+    }
+
     .example-list {
       list-style: none;
       padding: 0;
@@ -272,7 +282,9 @@
       <div class="info-box">
         <div class="info-box-title">📡 服务器地址说明</div>
         <div class="info-box-content">
-          配置一个可以访问到 PC 端上传页面的 URL 地址。插件会在用户选择"扫码上传"时加载这个页面。
+          配置服务器的基础 URL 地址。插件会自动加载 <code>/plugin.html</code> 页面显示二维码。
+          <br><br>
+          <strong>示例：</strong>配置 <code>https://example.com/</code> 后，插件会访问 <code>https://example.com/plugin.html</code>
         </div>
       </div>
 
@@ -285,7 +297,8 @@
           required
         >
         <div class="hint">
-          ⚠️ 请确保 URL 以 http:// 或 https:// 开头，且以 / 结尾
+          ⚠️ 请确保 URL 以 http:// 或 https:// 开头<br>
+          插件会自动添加 <code>plugin.html</code> 路径
         </div>
       </div>
 

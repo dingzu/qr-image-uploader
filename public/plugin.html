@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>扫码上传</title>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 24px;
+    }
+
+    .qr-wrapper {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #e0e0e0;
+      margin-bottom: 16px;
+      display: inline-block;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    #qrcode {
+      display: inline-block;
+    }
+
+    #qrcode img {
+      display: block;
+      border-radius: 4px;
+    }
+
+    .status {
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      margin-top: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .status.waiting {
+      background: #fff9e6;
+      color: #856404;
+      border: 1px solid #ffc107;
+    }
+
+    .status.connected {
+      background: #e8f5e9;
+      color: #155724;
+      border: 1px solid #28a745;
+    }
+
+    .status.success {
+      background: #e3f2fd;
+      color: #0d47a1;
+      border: 1px solid #2196f3;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #ffc107;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .icon {
+      font-size: 16px;
+      margin-right: 6px;
+    }
+
+    /* 简洁的淡入动画 */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .container {
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    /* 响应式 */
+    @media (max-width: 480px) {
+      .title {
+        font-size: 18px;
+      }
+      
+      .qr-wrapper {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">📱 扫码上传图片</h1>
+    <p class="subtitle">使用手机扫描下方二维码</p>
+    
+    <div class="qr-wrapper">
+      <div id="qrcode"></div>
+    </div>
+
+    <div class="status waiting" id="status">
+      <span class="loading"></span>
+      <span>等待手机连接...</span>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+    const roomId = generateRoomId();
+
+    // 生成随机房间 ID
+    function generateRoomId() {
+      return Math.random().toString(36).substring(2, 10).toUpperCase();
+    }
+
+    // 生成二维码
+    function generateQRCode() {
+      const url = `${window.location.origin}/upload/${roomId}`;
+      new QRCode(document.getElementById('qrcode'), {
+        text: url,
+        width: 200,
+        height: 200,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+
+    // 更新状态
+    function updateStatus(text, type = 'waiting') {
+      const statusEl = document.getElementById('status');
+      statusEl.className = `status ${type}`;
+      
+      let icon = '';
+      if (type === 'waiting') {
+        icon = '<span class="loading"></span>';
+      } else if (type === 'connected') {
+        icon = '<span class="icon">✓</span>';
+      } else if (type === 'success') {
+        icon = '<span class="icon">✓</span>';
+      }
+      
+      statusEl.innerHTML = icon + '<span>' + text + '</span>';
+    }
+
+    // Socket 连接
+    socket.on('connect', () => {
+      console.log('已连接到服务器');
+      socket.emit('create-room', roomId);
+    });
+
+    socket.on('room-created', (id) => {
+      console.log('房间已创建:', id);
+      generateQRCode();
+    });
+
+    // 移动端连接
+    socket.on('mobile-connected', () => {
+      console.log('手机已连接');
+      updateStatus('手机已连接，等待上传...', 'connected');
+    });
+
+    // 接收图片
+    socket.on('image-received', (imageData) => {
+      console.log('收到图片');
+      updateStatus('图片已接收！', 'success');
+      
+      // 发送消息给父窗口（Chrome 插件）
+      if (window.parent !== window) {
+        try {
+          window.parent.postMessage({
+            type: 'qr-upload-image',
+            imageData: imageData
+          }, '*');
+          console.log('已发送图片数据给插件');
+        } catch (e) {
+          console.error('发送消息失败:', e);
+        }
+      }
+      
+      // 短暂延迟后恢复等待状态（用户可能继续上传）
+      setTimeout(() => {
+        updateStatus('可以继续上传更多图片', 'connected');
+      }, 2000);
+    });
+
+    // 断开连接
+    socket.on('disconnect', () => {
+      console.log('与服务器断开连接');
+      updateStatus('连接已断开', 'waiting');
+    });
+  </script>
+</body>
+</html>
+
