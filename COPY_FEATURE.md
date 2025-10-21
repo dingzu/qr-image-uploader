@@ -88,36 +88,57 @@
 
 ### 1. Clipboard API
 
-使用现代浏览器的 Clipboard API：
+使用现代浏览器的 Clipboard API（PNG 格式）：
 
 ```javascript
 async function copyImageToClipboard(imageData) {
-  // 将 base64 转换为 Blob
-  const response = await fetch(imageData);
-  const blob = await response.blob();
+  // 1. 加载图片
+  const img = new Image();
+  img.src = imageData;
+  await new Promise(resolve => img.onload = resolve);
   
-  // 使用 Clipboard API 复制
+  // 2. 使用 Canvas 转换为 PNG
+  const canvas = document.createElement('canvas');
+  canvas.width = img.width;
+  canvas.height = img.height;
+  canvas.getContext('2d').drawImage(img, 0, 0);
+  
+  // 3. 转换为 PNG Blob
+  const blob = await new Promise(resolve => {
+    canvas.toBlob(resolve, 'image/png');
+  });
+  
+  // 4. 使用 Clipboard API 复制（PNG 格式）
   await navigator.clipboard.write([
     new ClipboardItem({
-      [blob.type]: blob
+      'image/png': blob  // Chrome 只支持 PNG
     })
   ]);
 }
 ```
 
+**重要**: Chrome 浏览器的 Clipboard API 只支持 `image/png` 格式，不支持 `image/jpeg`。
+
 ### 2. 数据流程
 
 ```
-base64 图片数据
+base64 图片数据 (JPEG)
     ↓
-fetch() 转换
+Image 对象加载
     ↓
-Blob 对象
+Canvas 绘制
     ↓
-ClipboardItem
+转换为 PNG Blob
+    ↓
+ClipboardItem (image/png)
     ↓
 系统剪贴板
 ```
+
+**格式转换原因**: 
+- 移动端压缩后是 JPEG 格式
+- Chrome Clipboard API 只支持 PNG
+- 需要通过 Canvas 转换格式
 
 ### 3. 事件处理
 
@@ -359,11 +380,17 @@ setTimeout(() => {
 1. 浏览器不支持 Clipboard API
 2. 未在 HTTPS 环境
 3. 用户拒绝权限
+4. ~~图片格式不支持（JPEG）~~ 已修复
 
 **解决方案**：
 - 升级浏览器到最新版本
 - 使用 HTTPS 或 localhost
 - 允许剪贴板权限
+- ✅ 已自动转换为 PNG 格式
+
+**已修复的问题**：
+- Chrome 报错: `Type image/jpeg not supported on write`
+- 解决: 自动转换为 PNG 格式
 
 ---
 

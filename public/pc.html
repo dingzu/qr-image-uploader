@@ -15,7 +15,7 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #f5f5f5;
       min-height: 100vh;
       padding: 20px;
     }
@@ -30,10 +30,8 @@
 
     .left-panel {
       background: white;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      padding: 40px;
-      width: 400px;
+      padding: 30px;
+      width: 380px;
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
@@ -41,9 +39,7 @@
 
     .right-panel {
       background: white;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      padding: 40px;
+      padding: 30px;
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -51,77 +47,76 @@
     }
 
     h1 {
-      color: #333;
-      margin-bottom: 10px;
-      font-size: 28px;
+      color: #000;
+      margin-bottom: 8px;
+      font-size: 24px;
+      font-weight: 600;
       text-align: center;
     }
 
     h2 {
-      color: #333;
+      color: #000;
       margin-bottom: 20px;
-      font-size: 24px;
+      font-size: 20px;
+      font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .subtitle {
       color: #666;
-      margin-bottom: 30px;
-      font-size: 14px;
+      margin-bottom: 24px;
+      font-size: 13px;
       text-align: center;
     }
 
     .qr-section {
-      background: #f8f9fa;
-      border-radius: 15px;
-      padding: 30px;
+      padding: 0px;
       text-align: center;
       margin-bottom: 20px;
     }
 
     #qrcode {
       display: inline-block;
-      padding: 20px;
+      padding: 16px;
       background: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
     .status {
-      margin-top: 20px;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-size: 14px;
+      margin-top: 16px;
+      padding: 10px 16px;
+      border: 1px solid #e0e0e0;
+      font-size: 13px;
       font-weight: 500;
+      background: white;
     }
 
     .status.waiting {
-      background: #fff3cd;
+      border-color: #ffc107;
+      background: #fff9e6;
       color: #856404;
     }
 
     .status.connected {
-      background: #d4edda;
+      border-color: #28a745;
+      background: #e8f5e9;
       color: #155724;
     }
 
     .room-id {
-      margin-top: 15px;
-      padding: 10px;
+      margin-top: 12px;
+      padding: 8px 12px;
       background: white;
-      border-radius: 8px;
+      border: 1px solid #e0e0e0;
       font-family: 'Courier New', monospace;
-      color: #667eea;
-      font-weight: bold;
-      font-size: 16px;
+      color: #000;
+      font-weight: 600;
+      font-size: 14px;
     }
 
     .stats {
-      background: #f8f9fa;
-      border-radius: 15px;
-      padding: 20px;
+      padding: 0px;
       margin-top: auto;
     }
 
@@ -129,8 +124,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid #e9ecef;
+      padding: 8px 0;
+      border-bottom: 1px solid #e0e0e0;
     }
 
     .stat-item:last-child {
@@ -139,13 +134,13 @@
 
     .stat-label {
       color: #666;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .stat-value {
-      color: #667eea;
-      font-weight: bold;
-      font-size: 18px;
+      color: #000;
+      font-weight: 600;
+      font-size: 16px;
     }
 
     .history-header {
@@ -156,18 +151,19 @@
     }
 
     .clear-btn {
-      background: #dc3545;
+      background: #000;
       color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 14px;
+      border: 1px solid #000;
+      padding: 6px 14px;
+      font-size: 13px;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: all 0.2s;
+      font-weight: 500;
     }
 
     .clear-btn:hover {
-      background: #c82333;
+      background: white;
+      color: #000;
     }
 
     .images-grid {
@@ -181,37 +177,36 @@
     }
 
     .images-grid::-webkit-scrollbar {
-      width: 8px;
+      width: 6px;
     }
 
     .images-grid::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 10px;
+      background: #f5f5f5;
     }
 
     .images-grid::-webkit-scrollbar-thumb {
-      background: #667eea;
-      border-radius: 10px;
+      background: #ccc;
     }
 
     .images-grid::-webkit-scrollbar-thumb:hover {
-      background: #5568d3;
+      background: #999;
     }
 
     .image-card {
-      background: #f8f9fa;
-      border-radius: 12px;
-      padding: 12px;
-      transition: transform 0.2s, box-shadow 0.2s;
+      background: white;
+      border: 1px solid #e0e0e0;
+      padding: 0;
+      transition: all 0.2s;
       cursor: pointer;
       animation: slideIn 0.3s ease-out;
       position: relative;
+      overflow: hidden;
     }
 
     @keyframes slideIn {
       from {
         opacity: 0;
-        transform: translateY(-20px);
+        transform: translateY(-10px);
       }
       to {
         opacity: 1;
@@ -220,109 +215,92 @@
     }
 
     .image-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+      border-color: #000;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
-    .image-card:hover .copy-overlay {
-      opacity: 1;
-    }
-
-    .copy-overlay {
+    .copy-btn {
       position: absolute;
-      top: 12px;
-      left: 12px;
-      right: 12px;
-      height: 180px;
-      background: rgba(102, 126, 234, 0.9);
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.3s ease;
+      top: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.8);
       color: white;
-      font-size: 16px;
-      font-weight: 600;
-      gap: 10px;
+      border: none;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
       z-index: 10;
+      font-weight: 500;
     }
 
-    .copy-overlay-icon {
-      font-size: 36px;
+    .copy-btn:hover {
+      background: #000;
     }
 
-    .copy-overlay-text {
-      font-size: 14px;
+    .copy-btn.copying {
+      background: #666;
     }
 
-    .copy-overlay.copied {
-      background: rgba(40, 167, 69, 0.95);
-    }
-
-    @keyframes copySuccess {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-
-    .copy-overlay.copied .copy-overlay-icon {
-      animation: copySuccess 0.3s ease;
+    .copy-btn.success {
+      background: #28a745;
     }
 
     /* 复制成功全局提示 */
     .copy-toast {
       position: fixed;
-      top: 80px;
+      top: 40px;
       right: 40px;
-      background: #28a745;
+      background: #000;
       color: white;
-      padding: 15px 25px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      font-size: 14px;
-      font-weight: 600;
+      padding: 12px 20px;
+      border: 1px solid #000;
+      font-size: 13px;
+      font-weight: 500;
       z-index: 2000;
       opacity: 0;
-      transform: translateX(400px);
+      transform: translateY(-20px);
       transition: all 0.3s ease;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .copy-toast.show {
       opacity: 1;
-      transform: translateX(0);
+      transform: translateY(0);
     }
 
     .copy-toast-icon {
-      font-size: 20px;
+      font-size: 16px;
     }
 
     .image-card img {
       width: 100%;
-      height: 180px;
+      height: 200px;
       object-fit: cover;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      background: white;
+      display: block;
+      background: #f5f5f5;
     }
 
     .image-card-info {
+      padding: 10px 12px;
       font-size: 12px;
       color: #666;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .image-card-time {
-      display: block;
-      margin-bottom: 5px;
+      font-size: 11px;
     }
 
     .image-card-number {
-      color: #667eea;
-      font-weight: bold;
+      color: #000;
+      font-weight: 600;
+      font-size: 12px;
     }
 
     .empty-state {
@@ -367,8 +345,8 @@
       top: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.9);
-      animation: fadeIn 0.3s;
+      background: rgba(0, 0, 0, 0.95);
+      animation: fadeIn 0.2s;
     }
 
     @keyframes fadeIn {
@@ -391,29 +369,26 @@
     .modal-content img {
       max-width: 100%;
       max-height: 90vh;
-      border-radius: 10px;
-      box-shadow: 0 0 50px rgba(255, 255, 255, 0.3);
+      border: 2px solid white;
     }
 
     .modal-close {
       position: absolute;
-      top: -40px;
+      top: -50px;
       right: 0;
       color: white;
-      font-size: 36px;
+      font-size: 14px;
       cursor: pointer;
-      background: rgba(0, 0, 0, 0.5);
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
+      background: #000;
+      border: 1px solid white;
+      padding: 8px 16px;
+      transition: all 0.2s;
+      font-weight: 500;
     }
 
     .modal-close:hover {
-      background: rgba(0, 0, 0, 0.8);
+      background: white;
+      color: #000;
     }
 
     @media (max-width: 1024px) {
@@ -490,7 +465,7 @@
   <!-- 图片预览模态框 -->
   <div class="modal" id="imageModal">
     <div class="modal-content">
-      <span class="modal-close" id="modalClose">&times;</span>
+      <button class="modal-close" id="modalClose">关闭</button>
       <img id="modalImage" src="" alt="预览">
     </div>
   </div>
@@ -498,7 +473,7 @@
   <!-- 复制成功提示 -->
   <div class="copy-toast" id="copyToast">
     <span class="copy-toast-icon">✓</span>
-    <span>图片已复制到剪贴板</span>
+    <span>已复制</span>
   </div>
 
   <script>
@@ -548,21 +523,65 @@
     // 复制图片到剪贴板
     async function copyImageToClipboard(imageData) {
       try {
-        // 将 base64 转换为 Blob
-        const response = await fetch(imageData);
-        const blob = await response.blob();
+        // 方法1: 尝试使用 Canvas 转换为 PNG（Chrome 推荐）
+        const img = new Image();
+        img.src = imageData;
         
-        // 使用 Clipboard API 复制图片
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+        
+        // 创建 canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        
+        // 转换为 PNG Blob
+        const blob = await new Promise(resolve => {
+          canvas.toBlob(resolve, 'image/png');
+        });
+        
+        // 使用 Clipboard API 复制（PNG 格式）
         await navigator.clipboard.write([
           new ClipboardItem({
-            [blob.type]: blob
+            'image/png': blob
           })
         ]);
         
         return true;
       } catch (error) {
         console.error('复制失败:', error);
-        return false;
+        
+        // 降级方案：尝试使用传统方法
+        try {
+          // 创建一个临时的 img 元素
+          const img = new Image();
+          img.src = imageData;
+          await new Promise(resolve => img.onload = resolve);
+          
+          // 创建 canvas 并复制
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          canvas.getContext('2d').drawImage(img, 0, 0);
+          
+          const blob = await new Promise(resolve => {
+            canvas.toBlob(resolve, 'image/png');
+          });
+          
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]);
+          
+          return true;
+        } catch (fallbackError) {
+          console.error('降级方案也失败:', fallbackError);
+          return false;
+        }
       }
     }
 
@@ -609,12 +628,11 @@
       }
 
       imagesGrid.innerHTML = imageHistory.map(item => `
-        <div class="image-card" data-image-id="${item.id}">
-          <div class="copy-overlay" onclick="event.stopPropagation(); copyImage(${item.id})">
-            <div class="copy-overlay-icon">📋</div>
-            <div class="copy-overlay-text">点击复制</div>
-          </div>
-          <img src="${item.data}" alt="图片 ${item.id}" onclick="openModal('${item.data}')">
+        <div class="image-card" data-image-id="${item.id}" onclick="openModal('${item.data}')">
+          <button class="copy-btn" onclick="event.stopPropagation(); copyImage(${item.id})" title="复制图片">
+            复制
+          </button>
+          <img src="${item.data}" alt="图片 ${item.id}">
           <div class="image-card-info">
             <span class="image-card-time">${item.timeString}</span>
             <span class="image-card-number">#${item.id}</span>
@@ -636,61 +654,47 @@
       const item = imageHistory.find(img => img.id === imageId);
       if (!item) return;
       
-      // 获取覆盖层元素
+      // 获取按钮元素
       const card = document.querySelector(`[data-image-id="${imageId}"]`);
-      const overlay = card?.querySelector('.copy-overlay');
+      const btn = card?.querySelector('.copy-btn');
       
-      if (overlay) {
-        // 显示复制中状态
-        overlay.innerHTML = `
-          <div class="copy-overlay-icon">⏳</div>
-          <div class="copy-overlay-text">复制中...</div>
-        `;
-      }
+      if (!btn) return;
+      
+      // 保存原始文本
+      const originalText = btn.textContent;
+      
+      // 显示复制中状态
+      btn.textContent = '...';
+      btn.classList.add('copying');
+      btn.disabled = true;
       
       // 复制图片
       const success = await copyImageToClipboard(item.data);
       
       if (success) {
         // 显示成功状态
-        if (overlay) {
-          overlay.classList.add('copied');
-          overlay.innerHTML = `
-            <div class="copy-overlay-icon">✓</div>
-            <div class="copy-overlay-text">复制成功！</div>
-          `;
-        }
+        btn.textContent = '✓';
+        btn.classList.remove('copying');
+        btn.classList.add('success');
         
         // 显示全局提示
         showCopyToast();
         
         // 1秒后恢复
         setTimeout(() => {
-          if (overlay) {
-            overlay.classList.remove('copied');
-            overlay.innerHTML = `
-              <div class="copy-overlay-icon">📋</div>
-              <div class="copy-overlay-text">点击复制</div>
-            `;
-          }
+          btn.textContent = originalText;
+          btn.classList.remove('success');
+          btn.disabled = false;
         }, 1000);
       } else {
         // 显示失败状态
-        if (overlay) {
-          overlay.innerHTML = `
-            <div class="copy-overlay-icon">✗</div>
-            <div class="copy-overlay-text">复制失败</div>
-          `;
-        }
+        btn.textContent = '✗';
+        btn.classList.remove('copying');
         
         // 1秒后恢复
         setTimeout(() => {
-          if (overlay) {
-            overlay.innerHTML = `
-              <div class="copy-overlay-icon">📋</div>
-              <div class="copy-overlay-text">点击复制</div>
-            `;
-          }
+          btn.textContent = originalText;
+          btn.disabled = false;
         }, 1000);
       }
     }
