@@ -421,57 +421,105 @@
     return new Promise((resolve, reject) => {
       console.log('Image Sender: 连接到 Socket.IO 服务器', serverUrl);
       
-      // 动态加载 Socket.IO 客户端
-      const script = document.createElement('script');
-      script.src = serverUrl + 'socket.io/socket.io.js';
-      script.onload = () => {
-        console.log('Image Sender: Socket.IO 客户端已加载');
-        
-        // 连接到服务器
-        const socket = io(serverUrl);
-        
-        socket.on('connect', () => {
-          console.log('Image Sender: 已连接到服务器');
-          
-          // 监听手机端加入房间
-          socket.on('receive-room-joined', () => {
-            console.log('Image Sender: 手机端已加入房间，发送图片');
-            
-            // 发送图片到手机
-            socket.emit('send-image-to-phone', {
-              roomId: roomId,
-              imageData: imageData
-            });
-          });
-          
-          // 监听发送成功
-          socket.on('image-send-success', () => {
-            console.log('Image Sender: 图片发送成功');
-            
-            // 更新状态
-            const statusEl = document.querySelector('.qr-image-sender-status');
-            if (statusEl) {
-              statusEl.className = 'qr-image-sender-status success';
-              statusEl.innerHTML = '<span>✓</span><span>图片已发送到手机！</span>';
-            }
-          });
-          
-          resolve();
-        });
-        
-        socket.on('connect_error', (error) => {
-          console.error('Image Sender: Socket.IO 连接错误', error);
-          reject(error);
-        });
-      };
+      // Socket.IO 已通过 manifest.json 注入，直接使用
+      if (!window.io) {
+        console.error('Image Sender: Socket.IO 库未加载');
+        reject(new Error('Socket.IO 库未加载'));
+        return;
+      }
       
-      script.onerror = () => {
-        console.error('Image Sender: 无法加载 Socket.IO 客户端');
-        reject(new Error('无法加载 Socket.IO 客户端'));
-      };
-      
-      document.head.appendChild(script);
+      console.log('Image Sender: Socket.IO 库已就绪');
+      initSocketConnection(serverUrl, roomId, imageData, resolve, reject);
     });
+  }
+  
+  // 初始化 Socket 连接
+  function initSocketConnection(serverUrl, roomId, imageData, resolve, reject) {
+    try {
+      console.log('Image Sender: 初始化 Socket 连接');
+      
+      // 连接到服务器
+      const socket = io(serverUrl, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 1000
+      });
+      
+      // 连接超时处理
+      const connectTimeout = setTimeout(() => {
+        console.error('Image Sender: 连接超时');
+        socket.close();
+        reject(new Error('连接服务器超时'));
+      }, 10000); // 10秒超时
+      
+      socket.on('connect', () => {
+        console.log('Image Sender: 已连接到服务器，Socket ID:', socket.id);
+        clearTimeout(connectTimeout);
+        
+        // 浏览器端也加入房间，这样可以监听房间内的事件
+        socket.emit('join-sender-room', roomId);
+        console.log('Image Sender: 已加入发送者房间', roomId);
+        
+        // 立即发送图片到房间（存储在服务器，等待手机扫码后接收）
+        console.log('Image Sender: 发送图片到服务器，房间:', roomId, '图片大小:', Math.round(imageData.length / 1024), 'KB');
+        socket.emit('send-image-to-phone', {
+          roomId: roomId,
+          imageData: imageData
+        });
+        
+        // 监听发送成功确认
+        socket.on('image-send-success', () => {
+          console.log('Image Sender: 服务器确认图片已存储，等待手机扫码...');
+          
+          // 更新状态
+          const statusEl = document.querySelector('.qr-image-sender-status');
+          if (statusEl) {
+            statusEl.className = 'qr-image-sender-status success';
+            statusEl.innerHTML = '<span>✓</span><span>扫码即可获取图片</span>';
+          }
+        });
+        
+        // 监听手机端扫码加入房间的通知
+        socket.on('phone-joined-room', () => {
+          console.log('Image Sender: 手机端已扫码加入房间！');
+          
+          // 更新状态：手机已连接
+          const statusEl = document.querySelector('.qr-image-sender-status');
+          if (statusEl) {
+            statusEl.className = 'qr-image-sender-status waiting';
+            statusEl.innerHTML = '<span class="qr-image-sender-loading"></span><span>手机已连接，正在传输...</span>';
+          }
+        });
+        
+        // 监听图片成功发送到手机
+        socket.on('image-received-by-phone', () => {
+          console.log('Image Sender: 手机已收到图片');
+          
+          // 更新状态
+          const statusEl = document.querySelector('.qr-image-sender-status');
+          if (statusEl) {
+            statusEl.className = 'qr-image-sender-status success';
+            statusEl.innerHTML = '<span>✓</span><span>图片已发送到手机！</span>';
+          }
+        });
+        
+        resolve();
+      });
+      
+      socket.on('connect_error', (error) => {
+        console.error('Image Sender: Socket.IO 连接错误', error);
+        clearTimeout(connectTimeout);
+        reject(new Error('连接服务器失败: ' + error.message));
+      });
+      
+      socket.on('error', (error) => {
+        console.error('Image Sender: Socket 错误', error);
+      });
+    } catch (error) {
+      console.error('Image Sender: 初始化连接失败', error);
+      reject(error);
+    }
   }
 
   // 添加模态框样式

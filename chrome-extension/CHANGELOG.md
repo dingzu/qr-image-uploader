@@ -1,5 +1,50 @@
 # 📋 更新日志
 
+## [1.4.2] - 2025-10-21
+
+### 🐛 修复
+- **修复 CSP (Content Security Policy) 限制导致的脚本加载失败**
+  - Chrome 扩展的 Content Script 无法从 CDN 动态加载脚本
+  - 解决方案：下载 Socket.IO 库到本地
+  - 通过 manifest.json 直接注入 socket.io.min.js
+  - 移除动态加载逻辑，直接使用已注入的 window.io
+
+### ✨ 改进
+- Socket.IO 库本地化：
+  - 下载 socket.io.min.js (45KB) 到扩展目录
+  - 在 manifest.json 中添加到 content_scripts
+  - 加载顺序：socket.io.min.js → qrcode.min.js → content.js → image-sender.js
+- 完全离线可用：
+  - 不再依赖任何外部 CDN
+  - QRCode + Socket.IO 全部本地化
+  - 提升加载速度和稳定性
+
+---
+
+## [1.4.1] - 2025-10-21
+
+### 🐛 修复
+- **修复 Socket.IO 客户端加载失败问题**
+  - 使用 CDN (cdn.socket.io) 加载客户端库
+  - 添加脚本加载检测和重用逻辑
+  - 添加 10 秒连接超时保护
+  
+### 🔧 技术改进
+- 优化房间机制：
+  - 浏览器端加入发送者房间 (`join-sender-room`)
+  - 手机端加入接收房间 (`join-receive-room`)
+  - 通知浏览器端手机已加入 (`phone-joined-room`)
+  - 支持手机端请求已存在的图片 (`request-room-image`)
+- 服务器端图片缓存：
+  - 将图片存储在服务器内存中
+  - 手机扫码后立即获取已发送的图片
+  - 支持重复扫码接收同一图片
+- 改进状态显示：
+  - 连接中 → 等待扫码 → 手机已连接 → 图片已发送
+  - 实时更新状态信息
+
+---
+
 ## [1.4.0] - 2025-10-21
 
 ### 🚀 重大功能升级

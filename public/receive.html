@@ -248,6 +248,7 @@
       console.log('已连接到服务器');
       if (roomId) {
         socket.emit('join-receive-room', roomId);
+        console.log('已发送加入房间请求:', roomId);
       } else {
         updateStatus('无效的房间号', 'error');
       }
@@ -256,6 +257,9 @@
     socket.on('receive-room-joined', () => {
       console.log('已加入接收房间');
       updateStatus('✓ 已连接，等待接收图片...', 'connected');
+      
+      // 请求获取房间内已有的图片（如果有）
+      socket.emit('request-room-image', roomId);
     });
 
     socket.on('receive-room-not-found', () => {
@@ -263,8 +267,11 @@
     });
 
     socket.on('image-sent-to-phone', (data) => {
-      console.log('收到图片');
+      console.log('收到图片，大小:', Math.round(data.imageData.length / 1024), 'KB');
       showReceivedImage(data.imageData);
+      
+      // 通知服务器：手机已收到图片
+      socket.emit('phone-received-image', roomId);
     });
 
     socket.on('disconnect', () => {

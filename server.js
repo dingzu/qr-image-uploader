@@ -66,20 +66,72 @@ io.on('connection', (socket) => {
     }
   });
 
+  // 浏览器端加入发送者房间
+  socket.on('join-sender-room', (roomId) => {
+    socket.join(roomId);
+    console.log(`浏览器端加入发送者房间: ${roomId}`);
+  });
+
   // 移动端加入接收房间（用于接收浏览器发送的图片）
   socket.on('join-receive-room', (roomId) => {
     socket.join(roomId);
     console.log(`移动端加入接收房间: ${roomId}`);
     socket.emit('receive-room-joined', roomId);
+    
+    // 通知房间内的浏览器端：手机已加入
+    socket.to(roomId).emit('phone-joined-room');
+    console.log(`已通知房间 ${roomId} 的发送者：手机已加入`);
+  });
+
+  // 手机端请求房间内已有的图片
+  socket.on('request-room-image', (roomId) => {
+    console.log(`手机端请求房间图片: ${roomId}`);
+    if (rooms.has(roomId)) {
+      const room = rooms.get(roomId);
+      if (room.imageData) {
+        console.log(`发送已存在的图片到手机，大小: ${Math.round(room.imageData.length / 1024)}KB`);
+        socket.emit('image-sent-to-phone', { imageData: room.imageData });
+      } else {
+        console.log(`房间 ${roomId} 存在，但还没有图片数据`);
+      }
+    } else {
+      console.log(`房间 ${roomId} 不存在`);
+    }
   });
 
   // 浏览器发送图片到手机
   socket.on('send-image-to-phone', ({ roomId, imageData }) => {
-    console.log(`发送图片到手机，房间: ${roomId}`);
-    // 发送图片到房间内的所有移动端
+    console.log(`发送图片到手机，房间: ${roomId}，图片大小: ${Math.round(imageData.length / 1024)}KB`);
+    
+    // 将图片存储在服务器内存中（简单实现）
+    if (!rooms.has(roomId)) {
+      rooms.set(roomId, { imageData: imageData, timestamp: Date.now() });
+      console.log(`创建新房间 ${roomId} 并存储图片`);
+    } else {
+      const room = rooms.get(roomId);
+      room.imageData = imageData;
+      room.timestamp = Date.now();
+      console.log(`更新房间 ${roomId} 的图片数据`);
+    }
+    
+    // 立即发送图片到房间内的所有移动端（如果已经加入）
+    const clientsInRoom = io.sockets.adapter.rooms.get(roomId);
+    const clientCount = clientsInRoom ? clientsInRoom.size : 0;
+    console.log(`房间 ${roomId} 当前有 ${clientCount} 个客户端`);
+    
     io.to(roomId).emit('image-sent-to-phone', { imageData });
+    
     // 通知发送者成功
     socket.emit('image-send-success');
+    
+    console.log(`图片已存储并广播到房间 ${roomId}`);
+  });
+
+  // 手机端通知已收到图片
+  socket.on('phone-received-image', (roomId) => {
+    console.log(`手机端确认收到图片，房间: ${roomId}`);
+    // 通知浏览器端：手机已收到图片
+    socket.to(roomId).emit('image-received-by-phone');
   });
 
   // 断开连接
