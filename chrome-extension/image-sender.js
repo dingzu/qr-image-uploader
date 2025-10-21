@@ -388,19 +388,15 @@
           throw qrError;
         }
         
-        // 更新状态：连接到服务器
-        if (statusEl) {
-          statusEl.innerHTML = '<span class="qr-image-sender-loading"></span><span>连接到服务器...</span>';
-        }
-        
-        // 连接到 Socket.IO 服务器并发送图片
-        await connectAndSendImage(uploadUrl, roomId, imageData);
-        
-        // 更新状态：等待扫码
+        // 更新状态：等待扫码（不立即连接服务器）
         if (statusEl) {
           statusEl.className = 'qr-image-sender-status success';
           statusEl.innerHTML = '<span>✓</span><span>使用 KIM 扫码</span>';
         }
+        
+        // 等待手机扫码后再连接并发送图片
+        console.log('Image Sender: 等待手机扫码...');
+        await waitForPhoneAndSendImage(uploadUrl, roomId, imageData, statusEl);
         
         // 添加提示信息
         const modal = document.getElementById('qr-image-sender-modal');
@@ -429,7 +425,110 @@
     return 'IMG_' + Math.random().toString(36).substring(2, 10).toUpperCase();
   }
   
-  // 连接到 Socket.IO 服务器并发送图片
+  // 等待手机扫码后连接并发送图片
+  async function waitForPhoneAndSendImage(serverUrl, roomId, imageData, statusEl) {
+    return new Promise((resolve, reject) => {
+      console.log('Image Sender: 先连接服务器，等待手机扫码');
+      
+      if (!window.io) {
+        reject(new Error('Socket.IO 库未加载'));
+        return;
+      }
+      
+      // 连接到服务器（仅用于监听手机扫码）
+      const socket = io(serverUrl, {
+        transports: ['websocket', 'polling']
+      });
+      
+      let phoneJoined = false;
+      
+      socket.on('connect', () => {
+        console.log('Image Sender: 已连接，Socket ID:', socket.id);
+        // 加入房间，等待手机扫码通知
+        socket.emit('join-sender-room', roomId);
+        console.log('Image Sender: 监听房间:', roomId, '等待手机加入...');
+      });
+      
+      // 监听手机加入房间
+      socket.on('phone-joined-room', () => {
+        if (phoneJoined) return; // 避免重复处理
+        phoneJoined = true;
+        
+        console.log('Image Sender: 手机已扫码！开始发送图片');
+        
+        // 更新状态
+        if (statusEl) {
+          statusEl.className = 'qr-image-sender-status waiting';
+          statusEl.innerHTML = '<span class="qr-image-sender-loading"></span><span>手机已连接，正在发送...</span>';
+        }
+        
+        // 显示进度条
+        const progressContainer = document.querySelector('.qr-image-sender-progress-container');
+        if (progressContainer) {
+          progressContainer.style.display = 'block';
+        }
+        
+        // 发送图片
+        console.log('Image Sender: 发送图片，大小:', Math.round(imageData.length / 1024), 'KB');
+        socket.emit('send-image-to-phone', {
+          roomId: roomId,
+          imageData: imageData
+        });
+      });
+      
+      // 监听发送成功
+      socket.on('image-send-success', () => {
+        console.log('Image Sender: 服务器确认图片已发送');
+        if (statusEl) {
+          statusEl.className = 'qr-image-sender-status success';
+          statusEl.innerHTML = '<span>✓</span><span>等待手机接收...</span>';
+        }
+      });
+      
+      // 监听进度更新
+      socket.on('sender-progress-update', (data) => {
+        console.log('Image Sender: 接收端进度:', data.progress + '%');
+        
+        const progressFill = document.querySelector('.qr-image-sender-progress-fill');
+        const progressText = document.querySelector('.qr-image-sender-progress-text');
+        
+        if (progressFill && progressText) {
+          progressFill.style.width = data.progress + '%';
+          progressText.textContent = `传输中... ${data.progress}%`;
+        }
+      });
+      
+      // 监听传输完成
+      socket.on('image-received-by-phone', () => {
+        console.log('Image Sender: 手机已收到图片');
+        
+        if (statusEl) {
+          statusEl.className = 'qr-image-sender-status success';
+          statusEl.innerHTML = '<span>✓</span><span>图片已发送到手机！</span>';
+        }
+        
+        const progressFill = document.querySelector('.qr-image-sender-progress-fill');
+        const progressText = document.querySelector('.qr-image-sender-progress-text');
+        
+        if (progressFill && progressText) {
+          progressFill.style.width = '100%';
+          progressText.textContent = '传输完成！';
+        }
+        
+        setTimeout(() => {
+          socket.disconnect();
+          resolve();
+        }, 2000);
+      });
+      
+      socket.on('connect_error', (error) => {
+        console.error('Image Sender: 连接错误', error);
+        reject(error);
+      });
+    });
+  }
+  
+  // 连接到 Socket.IO 服务器并发送图片（旧方法，保留但不使用）
   async function connectAndSendImage(serverUrl, roomId, imageData) {
     return new Promise((resolve, reject) => {
       console.log('Image Sender: 连接到 Socket.IO 服务器', serverUrl);
