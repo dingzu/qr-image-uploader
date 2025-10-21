@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>接收图片</title>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+      background: white;
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      background: white;
+      padding: 24px;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+
+    h1 {
+      color: #000;
+      margin-bottom: 8px;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 24px;
+      font-size: 13px;
+    }
+
+    .status {
+      padding: 16px;
+      border: 1px solid #e0e0e0;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      background: white;
+    }
+
+    .status.waiting {
+      border-color: #ffc107;
+      background: #fff9e6;
+      color: #856404;
+    }
+
+    .status.connected {
+      border-color: #28a745;
+      background: #e8f5e9;
+      color: #155724;
+    }
+
+    .status.error {
+      border-color: #f44336;
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .image-container {
+      display: none;
+      margin-top: 20px;
+    }
+
+    .image-container.show {
+      display: block;
+    }
+
+    .received-image {
+      width: 100%;
+      border: 2px solid #e0e0e0;
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      background: #000;
+      color: white;
+      border: 1px solid #000;
+      padding: 14px 32px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    .btn:hover {
+      background: white;
+      color: #000;
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .image-info {
+      background: #f5f5f5;
+      padding: 12px;
+      margin-bottom: 16px;
+      text-align: left;
+      font-size: 12px;
+      color: #666;
+      border: 1px solid #e0e0e0;
+    }
+
+    .image-info p {
+      margin: 4px 0;
+    }
+
+    .image-info strong {
+      color: #000;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📱 接收图片</h1>
+    <p class="subtitle">等待从浏览器发送图片</p>
+    
+    <div class="status waiting" id="status">
+      <span class="loading"></span>
+      正在连接...
+    </div>
+
+    <div class="image-container" id="imageContainer">
+      <img id="receivedImage" class="received-image" src="" alt="接收的图片">
+      <div class="image-info" id="imageInfo"></div>
+      <button class="btn" id="downloadBtn">📥 下载图片</button>
+      <button class="btn" id="waitMoreBtn" style="background: white; color: #000;">继续等待更多图片</button>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+    const roomId = getRoomIdFromUrl();
+    let currentImageData = null;
+    let imageCounter = 0;
+
+    const statusEl = document.getElementById('status');
+    const imageContainer = document.getElementById('imageContainer');
+    const receivedImage = document.getElementById('receivedImage');
+    const imageInfo = document.getElementById('imageInfo');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const waitMoreBtn = document.getElementById('waitMoreBtn');
+
+    // 从 URL 获取房间 ID
+    function getRoomIdFromUrl() {
+      const path = window.location.pathname;
+      const match = path.match(/\/receive\/(.+)/);
+      return match ? match[1] : null;
+    }
+
+    // 更新状态
+    function updateStatus(message, type = 'waiting') {
+      statusEl.className = `status ${type}`;
+      statusEl.innerHTML = message;
+    }
+
+    // 格式化文件大小
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    // 计算 base64 图片大小
+    function getImageSize(dataURL) {
+      const base64 = dataURL.split(',')[1];
+      const padding = (base64.match(/=/g) || []).length;
+      return (base64.length * 0.75) - padding;
+    }
+
+    // 下载图片
+    function downloadImage() {
+      if (!currentImageData) return;
+      
+      const link = document.createElement('a');
+      link.href = currentImageData;
+      link.download = `image-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      updateStatus('✓ 图片已下载！', 'connected');
+    }
+
+    // 显示接收的图片
+    function showReceivedImage(imageData) {
+      imageCounter++;
+      currentImageData = imageData;
+      
+      receivedImage.src = imageData;
+      
+      // 显示图片信息
+      const size = getImageSize(imageData);
+      imageInfo.innerHTML = `
+        <p><strong>接收时间:</strong> ${new Date().toLocaleTimeString()}</p>
+        <p><strong>图片大小:</strong> ${formatFileSize(size)}</p>
+        <p><strong>接收序号:</strong> #${imageCounter}</p>
+      `;
+      
+      imageContainer.classList.add('show');
+      updateStatus('✓ 图片已接收！', 'connected');
+    }
+
+    // 继续等待
+    function waitForMore() {
+      imageContainer.classList.remove('show');
+      updateStatus('<span class="loading"></span>等待接收更多图片...', 'connected');
+    }
+
+    // Socket 连接
+    socket.on('connect', () => {
+      console.log('已连接到服务器');
+      if (roomId) {
+        socket.emit('join-receive-room', roomId);
+      } else {
+        updateStatus('无效的房间号', 'error');
+      }
+    });
+
+    socket.on('receive-room-joined', () => {
+      console.log('已加入接收房间');
+      updateStatus('✓ 已连接，等待接收图片...', 'connected');
+    });
+
+    socket.on('receive-room-not-found', () => {
+      updateStatus('房间不存在，请重新扫码', 'error');
+    });
+
+    socket.on('image-sent-to-phone', (data) => {
+      console.log('收到图片');
+      showReceivedImage(data.imageData);
+    });
+
+    socket.on('disconnect', () => {
+      updateStatus('连接已断开', 'error');
+    });
+
+    // 按钮事件
+    downloadBtn.addEventListener('click', downloadImage);
+    waitMoreBtn.addEventListener('click', waitForMore);
+  </script>
+</body>
+</html>
+

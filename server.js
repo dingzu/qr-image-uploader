@@ -18,9 +18,14 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'pc.html'));
 });
 
-// 移动端页面
+// 移动端上传页面
 app.get('/upload/:roomId', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'mobile.html'));
+});
+
+// 移动端接收页面（用于接收浏览器发送的图片）
+app.get('/receive/:roomId', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'receive.html'));
 });
 
 // Socket.IO 连接处理
@@ -59,6 +64,22 @@ io.on('connection', (socket) => {
       // 通知移动端上传成功
       socket.emit('upload-success');
     }
+  });
+
+  // 移动端加入接收房间（用于接收浏览器发送的图片）
+  socket.on('join-receive-room', (roomId) => {
+    socket.join(roomId);
+    console.log(`移动端加入接收房间: ${roomId}`);
+    socket.emit('receive-room-joined', roomId);
+  });
+
+  // 浏览器发送图片到手机
+  socket.on('send-image-to-phone', ({ roomId, imageData }) => {
+    console.log(`发送图片到手机，房间: ${roomId}`);
+    // 发送图片到房间内的所有移动端
+    io.to(roomId).emit('image-sent-to-phone', { imageData });
+    // 通知发送者成功
+    socket.emit('image-send-success');
   });
 
   // 断开连接

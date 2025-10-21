@@ -311,29 +311,79 @@
 
   // 生成二维码
   async function generateQRForImage(imageData) {
+    const statusEl = document.querySelector('.qr-image-sender-status');
+    
     try {
-      // 创建下载页面的 HTML
-      const downloadPage = createDownloadPage(imageData);
-      const htmlBlob = new Blob([downloadPage], { type: 'text/html' });
-      const blobUrl = URL.createObjectURL(htmlBlob);
+      console.log('Image Sender: 开始生成二维码流程');
+      console.log('Image Sender: 图片数据大小:', Math.round(imageData.length / 1024), 'KB');
       
-      // 等待 QRCode 库加载
-      await ensureQRCodeLoaded();
+      // 更新状态：获取服务器地址
+      if (statusEl) {
+        statusEl.className = 'qr-image-sender-status waiting';
+        statusEl.innerHTML = '<span class="qr-image-sender-loading"></span><span>获取服务器配置...</span>';
+      }
       
-      // 生成二维码（使用 blob URL）
+      // 获取配置的上传 URL
+      const result = await chrome.storage.sync.get(['uploadUrl']);
+      let uploadUrl = result.uploadUrl || 'https://qr-image-uploader.onrender.com/';
+      
+      // 确保 URL 以 / 结尾
+      if (!uploadUrl.endsWith('/')) {
+        uploadUrl += '/';
+      }
+      
+      console.log('Image Sender: 使用服务器地址:', uploadUrl);
+      
+      // 生成房间 ID
+      const roomId = generateRoomId();
+      console.log('Image Sender: 生成房间 ID:', roomId);
+      
+      // 更新状态：生成二维码
+      if (statusEl) {
+        statusEl.innerHTML = '<span class="qr-image-sender-loading"></span><span>生成二维码...</span>';
+      }
+      
+      // QRCode 库已通过 manifest.json 注入，直接使用
+      if (!window.QRCode) {
+        throw new Error('QRCode 库未加载');
+      }
+      
+      // 生成接收页面的 URL
+      const receiveUrl = `${uploadUrl}receive/${roomId}`;
+      console.log('Image Sender: 接收页面 URL:', receiveUrl);
+      
+      // 生成二维码
       const qrcodeContainer = document.getElementById('qr-image-sender-qrcode');
       if (qrcodeContainer && window.QRCode) {
-        new QRCode(qrcodeContainer, {
-          text: blobUrl,
-          width: 200,
-          height: 200,
-          colorDark: '#000000',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.H
-        });
+        console.log('Image Sender: 开始生成二维码');
         
-        // 更新状态
-        const statusEl = document.querySelector('.qr-image-sender-status');
+        // 清空容器
+        qrcodeContainer.innerHTML = '';
+        
+        try {
+          new QRCode(qrcodeContainer, {
+            text: receiveUrl,
+            width: 200,
+            height: 200,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+          });
+          console.log('Image Sender: 二维码生成完成');
+        } catch (qrError) {
+          console.error('Image Sender: QRCode 生成失败', qrError);
+          throw qrError;
+        }
+        
+        // 更新状态：连接到服务器
+        if (statusEl) {
+          statusEl.innerHTML = '<span class="qr-image-sender-loading"></span><span>连接到服务器...</span>';
+        }
+        
+        // 连接到 Socket.IO 服务器并发送图片
+        await connectAndSendImage(uploadUrl, roomId, imageData);
+        
+        // 更新状态：等待扫码
         if (statusEl) {
           statusEl.className = 'qr-image-sender-status success';
           statusEl.innerHTML = '<span>✓</span><span>扫码即可获取图片</span>';
@@ -344,202 +394,84 @@
         if (modal) {
           const hint = modal.querySelector('.qr-image-sender-hint');
           if (hint) {
-            hint.innerHTML = '扫码后图片会自动下载到手机<br><small style="color: #ccc; font-size: 11px;">二维码有效期：本次会话</small>';
+            hint.innerHTML = '扫码后图片会自动发送到手机<br><small style="color: #ccc; font-size: 11px;">使用 Socket.IO 实时传输</small>';
           }
         }
+        
+        console.log('Image Sender: 二维码流程完成');
       } else {
-        // 备用方案：提供下载链接
-        console.error('QRCode 库未加载');
-        const statusEl = document.querySelector('.qr-image-sender-status');
-        if (statusEl) {
-          statusEl.className = 'qr-image-sender-status success';
-          statusEl.innerHTML = `<a href="${blobUrl}" target="_blank" style="color: #2196f3; text-decoration: none;">点击打开下载页面</a>`;
-        }
+        throw new Error('QRCode 库不可用');
       }
     } catch (error) {
       console.error('Image Sender: 生成二维码失败', error);
-      const statusEl = document.querySelector('.qr-image-sender-status');
       if (statusEl) {
         statusEl.className = 'qr-image-sender-status error';
-        statusEl.innerHTML = '<span>✗</span><span>生成失败，请重试</span>';
+        statusEl.innerHTML = `<span>✗</span><span>生成失败: ${error.message}</span>`;
       }
     }
   }
   
-  // 确保 QRCode 库已加载
-  function ensureQRCodeLoaded() {
+  // 生成随机房间 ID
+  function generateRoomId() {
+    return 'IMG_' + Math.random().toString(36).substring(2, 10).toUpperCase();
+  }
+  
+  // 连接到 Socket.IO 服务器并发送图片
+  async function connectAndSendImage(serverUrl, roomId, imageData) {
     return new Promise((resolve, reject) => {
-      if (window.QRCode) {
-        resolve();
-        return;
-      }
+      console.log('Image Sender: 连接到 Socket.IO 服务器', serverUrl);
       
-      // 检查是否已经有加载中的脚本
-      const existingScript = document.querySelector('script[src*="qrcode"]');
-      if (existingScript) {
-        // 等待现有脚本加载
-        existingScript.addEventListener('load', () => resolve());
-        existingScript.addEventListener('error', () => reject(new Error('QRCode 库加载失败')));
-        return;
-      }
-      
-      // 加载 QRCode 库
-      console.log('Image Sender: 加载 QRCode 库');
+      // 动态加载 Socket.IO 客户端
       const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+      script.src = serverUrl + 'socket.io/socket.io.js';
       script.onload = () => {
-        console.log('Image Sender: QRCode 库加载成功');
-        resolve();
+        console.log('Image Sender: Socket.IO 客户端已加载');
+        
+        // 连接到服务器
+        const socket = io(serverUrl);
+        
+        socket.on('connect', () => {
+          console.log('Image Sender: 已连接到服务器');
+          
+          // 监听手机端加入房间
+          socket.on('receive-room-joined', () => {
+            console.log('Image Sender: 手机端已加入房间，发送图片');
+            
+            // 发送图片到手机
+            socket.emit('send-image-to-phone', {
+              roomId: roomId,
+              imageData: imageData
+            });
+          });
+          
+          // 监听发送成功
+          socket.on('image-send-success', () => {
+            console.log('Image Sender: 图片发送成功');
+            
+            // 更新状态
+            const statusEl = document.querySelector('.qr-image-sender-status');
+            if (statusEl) {
+              statusEl.className = 'qr-image-sender-status success';
+              statusEl.innerHTML = '<span>✓</span><span>图片已发送到手机！</span>';
+            }
+          });
+          
+          resolve();
+        });
+        
+        socket.on('connect_error', (error) => {
+          console.error('Image Sender: Socket.IO 连接错误', error);
+          reject(error);
+        });
       };
-      script.onerror = () => {
-        console.error('Image Sender: QRCode 库加载失败');
-        reject(new Error('QRCode 库加载失败'));
-      };
-      document.head.appendChild(script);
       
-      // 设置超时
-      setTimeout(() => {
-        if (!window.QRCode) {
-          reject(new Error('QRCode 库加载超时'));
-        }
-      }, 10000);
+      script.onerror = () => {
+        console.error('Image Sender: 无法加载 Socket.IO 客户端');
+        reject(new Error('无法加载 Socket.IO 客户端'));
+      };
+      
+      document.head.appendChild(script);
     });
-  }
-  
-  // 创建下载页面
-  function createDownloadPage(imageData) {
-    const filename = 'image-' + Date.now() + '.png';
-    return `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>下载图片</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .container {
-      background: white;
-      border-radius: 16px;
-      padding: 30px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      max-width: 90%;
-      text-align: center;
-    }
-    h1 {
-      font-size: 24px;
-      color: #000;
-      margin-bottom: 20px;
-    }
-    img {
-      max-width: 100%;
-      max-height: 60vh;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .download-btn {
-      display: inline-block;
-      padding: 14px 32px;
-      background: #000;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.2s;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-    .download-btn:hover {
-      background: #333;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.3);
-    }
-    .download-btn:active {
-      transform: translateY(0);
-    }
-    .status {
-      margin-top: 15px;
-      padding: 10px;
-      background: #e8f5e9;
-      color: #2e7d32;
-      border-radius: 6px;
-      font-size: 14px;
-      display: none;
-    }
-    .status.show {
-      display: block;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>📥 下载图片</h1>
-    <img src="${imageData}" alt="图片" id="image">
-    <a href="${imageData}" download="${filename}" class="download-btn" id="downloadBtn">
-      下载图片
-    </a>
-    <div class="status" id="status"></div>
-  </div>
-  
-  <script>
-    // 自动触发下载
-    const downloadBtn = document.getElementById('downloadBtn');
-    const status = document.getElementById('status');
-    const image = document.getElementById('image');
-    
-    // 等待图片加载完成
-    image.onload = function() {
-      // 自动点击下载（延迟以确保页面加载完成）
-      setTimeout(() => {
-        downloadBtn.click();
-        status.textContent = '✓ 已开始下载';
-        status.classList.add('show');
-      }, 500);
-    };
-    
-    // 手动点击
-    downloadBtn.addEventListener('click', function() {
-      status.textContent = '✓ 已开始下载';
-      status.classList.add('show');
-    });
-    
-    // 长按保存提示
-    let pressTimer;
-    image.addEventListener('touchstart', function() {
-      pressTimer = setTimeout(() => {
-        status.textContent = 'ℹ️ 长按图片可以保存到相册';
-        status.classList.add('show');
-        status.style.background = '#e3f2fd';
-        status.style.color = '#1565c0';
-      }, 500);
-    });
-    
-    image.addEventListener('touchend', function() {
-      clearTimeout(pressTimer);
-    });
-  </script>
-</body>
-</html>`;
-  }
-
-  // 生成唯一 ID
-  function generateImageId() {
-    return Date.now().toString(36) + Math.random().toString(36).substring(2);
   }
 
   // 添加模态框样式
