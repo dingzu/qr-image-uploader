@@ -144,6 +144,16 @@
       color: #000;
       font-weight: 600;
     }
+
+    .download-hint {
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: #f5f5f5;
+      border: 1px solid #e0e0e0;
+    }
   </style>
 </head>
 <body>
@@ -159,9 +169,8 @@
     <div class="image-container" id="imageContainer">
       <img id="receivedImage" class="received-image" src="" alt="接收的图片">
       <div class="image-info" id="imageInfo"></div>
-      <button class="btn" id="downloadBtn">📥 下载图片</button>
+      <div class="download-hint">长按图片即可下载</div>
       <button class="btn" id="openKimBtn" style="background: #4CAF50; color: white;">加入 KIM 群</button>
-      <button class="btn" id="waitMoreBtn" style="background: white; color: #000;">继续等待更多图片</button>
     </div>
   </div>
 
@@ -175,9 +184,7 @@
     const imageContainer = document.getElementById('imageContainer');
     const receivedImage = document.getElementById('receivedImage');
     const imageInfo = document.getElementById('imageInfo');
-    const downloadBtn = document.getElementById('downloadBtn');
     const openKimBtn = document.getElementById('openKimBtn');
-    const waitMoreBtn = document.getElementById('waitMoreBtn');
 
     // 从 URL 获取房间 ID
     function getRoomIdFromUrl() {
@@ -250,20 +257,6 @@
       return (base64.length * 0.75) - padding;
     }
 
-    // 下载图片
-    function downloadImage() {
-      if (!currentImageData) return;
-      
-      const link = document.createElement('a');
-      link.href = currentImageData;
-      link.download = `image-${Date.now()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      updateStatus('✓ 图片已下载！', 'connected');
-    }
-
     // 显示接收的图片
     function showReceivedImage(imageData) {
       imageCounter++;
@@ -281,12 +274,6 @@
       
       imageContainer.classList.add('show');
       updateStatus('✓ 图片已接收！', 'connected');
-    }
-
-    // 继续等待
-    function waitForMore() {
-      imageContainer.classList.remove('show');
-      updateStatus('<span class="loading"></span>等待接收更多图片...', 'connected');
     }
 
     // Socket 连接
@@ -325,9 +312,7 @@
     });
 
     // 按钮事件
-    downloadBtn.addEventListener('click', downloadImage);
     openKimBtn.addEventListener('click', openInKim);
-    waitMoreBtn.addEventListener('click', waitForMore);
   </script>
 </body>
 </html>

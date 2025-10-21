@@ -125,9 +125,8 @@
     btn.style.cssText = `
       padding: 8px 16px;
       background: rgba(0, 0, 0, 0.85);
-      border: 1px solid #fff;
+      border: 2px solid #fff;
       color: white;
-      border: none;
       border-radius: 6px;
       font-size: 13px;
       font-weight: 500;
@@ -393,7 +392,7 @@
         // 更新状态：等待扫码
         if (statusEl) {
           statusEl.className = 'qr-image-sender-status success';
-          statusEl.innerHTML = '<span>✓</span><span>扫码即可获取图片</span>';
+          statusEl.innerHTML = '<span>✓</span><span>使用 KIM 扫码</span>';
         }
         
         // 添加提示信息
@@ -483,7 +482,7 @@
           const statusEl = document.querySelector('.qr-image-sender-status');
           if (statusEl) {
             statusEl.className = 'qr-image-sender-status success';
-            statusEl.innerHTML = '<span>✓</span><span>扫码即可获取图片</span>';
+            statusEl.innerHTML = '<span>✓</span><span>使用 KIM 扫码</span>';
           }
         });
         
