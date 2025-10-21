@@ -182,6 +182,62 @@
       font-size: 14px;
       font-weight: 500;
     }
+
+    .debug-panel {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-height: 200px;
+      background: #000;
+      color: #0f0;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      overflow-y: auto;
+      padding: 10px;
+      border-top: 2px solid #0f0;
+      display: none;
+      z-index: 9999;
+    }
+
+    .debug-panel.show {
+      display: block;
+    }
+
+    .debug-log {
+      margin: 2px 0;
+      word-wrap: break-word;
+    }
+
+    .debug-toggle {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: #000;
+      color: #0f0;
+      border: 2px solid #0f0;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 10000;
+      font-family: 'Courier New', monospace;
+    }
+
+    .debug-copy {
+      position: fixed;
+      bottom: 10px;
+      right: 100px;
+      background: #000;
+      color: #0f0;
+      border: 2px solid #0f0;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 10000;
+      font-family: 'Courier New', monospace;
+    }
   </style>
 </head>
 <body>
@@ -208,6 +264,105 @@
       <button class="btn" id="openKimBtn" style="background: #4CAF50; color: white;">加入 KIM 群</button>
     </div>
   </div>
+
+  <!-- 调试面板 -->
+  <div class="debug-panel" id="debugPanel"></div>
+  <button class="debug-toggle" id="debugToggle">显示日志</button>
+  <button class="debug-copy" id="debugCopy">复制日志</button>
+
+  <script>
+    // 调试日志系统
+    const debugPanel = document.getElementById('debugPanel');
+    const debugToggle = document.getElementById('debugToggle');
+    const debugCopy = document.getElementById('debugCopy');
+    let debugLogs = [];
+    let debugPanelVisible = false;
+
+    function addDebugLog(message, type = 'log') {
+      const timestamp = new Date().toLocaleTimeString();
+      const logEntry = `[${timestamp}] ${message}`;
+      debugLogs.push(logEntry);
+      
+      const logDiv = document.createElement('div');
+      logDiv.className = 'debug-log';
+      logDiv.textContent = logEntry;
+      
+      if (type === 'error') {
+        logDiv.style.color = '#f00';
+      } else if (type === 'success') {
+        logDiv.style.color = '#0ff';
+      } else if (type === 'warn') {
+        logDiv.style.color = '#ff0';
+      }
+      
+      debugPanel.appendChild(logDiv);
+      debugPanel.scrollTop = debugPanel.scrollHeight;
+      
+      // 限制日志数量，避免内存溢出
+      if (debugPanel.children.length > 100) {
+        debugPanel.removeChild(debugPanel.firstChild);
+        debugLogs.shift();
+      }
+    }
+
+    // 切换调试面板
+    debugToggle.addEventListener('click', () => {
+      debugPanelVisible = !debugPanelVisible;
+      if (debugPanelVisible) {
+        debugPanel.classList.add('show');
+        debugToggle.textContent = '隐藏日志';
+      } else {
+        debugPanel.classList.remove('show');
+        debugToggle.textContent = '显示日志';
+      }
+    });
+
+    // 复制日志
+    debugCopy.addEventListener('click', async () => {
+      const logText = debugLogs.join('\n');
+      try {
+        await navigator.clipboard.writeText(logText);
+        debugCopy.textContent = '已复制！';
+        setTimeout(() => {
+          debugCopy.textContent = '复制日志';
+        }, 2000);
+      } catch (err) {
+        // 降级方案：创建文本框复制
+        const textarea = document.createElement('textarea');
+        textarea.value = logText;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        debugCopy.textContent = '已复制！';
+        setTimeout(() => {
+          debugCopy.textContent = '复制日志';
+        }, 2000);
+      }
+    });
+
+    // 覆盖 console 方法
+    const originalConsoleLog = console.log;
+    const originalConsoleError = console.error;
+    const originalConsoleWarn = console.warn;
+
+    console.log = function(...args) {
+      originalConsoleLog.apply(console, args);
+      addDebugLog(args.join(' '), 'log');
+    };
+
+    console.error = function(...args) {
+      originalConsoleError.apply(console, args);
+      addDebugLog('[ERROR] ' + args.join(' '), 'error');
+    };
+
+    console.warn = function(...args) {
+      originalConsoleWarn.apply(console, args);
+      addDebugLog('[WARN] ' + args.join(' '), 'warn');
+    };
+
+    addDebugLog('调试系统已启动', 'success');
+  </script>
 
   <script>
     const socket = io();
@@ -320,33 +475,35 @@
 
     // Socket 连接
     socket.on('connect', () => {
-      console.log('已连接到服务器');
+      console.log('✓ 已连接到服务器，Socket ID:', socket.id);
       if (roomId) {
         socket.emit('join-receive-room', roomId);
-        console.log('已发送加入房间请求:', roomId);
+        console.log('→ 发送加入房间请求:', roomId);
       } else {
+        console.error('无效的房间号');
         updateStatus('无效的房间号', 'error');
       }
     });
 
     socket.on('receive-room-joined', () => {
-      console.log('已加入接收房间');
+      console.log('✓ 已加入接收房间:', roomId);
       updateStatus('✓ 已连接，检查是否有待接收图片...', 'connected');
       
       // 请求获取房间内已有的图片（如果有）
+      console.log('→ 请求房间图片信息');
       socket.emit('request-room-image', roomId);
     });
     
     // 监听房间图片信息（服务器响应 request-room-image）
     socket.on('room-image-info', (data) => {
-      console.log('收到房间图片信息:', data);
+      console.log('← 收到房间图片信息:', JSON.stringify(data));
       
       if (data.hasImage) {
-        console.log('房间内有图片，开始接收');
+        console.log('✓ 房间内有图片，开始接收');
         
         if (data.isChunked) {
           // 大图片，分块传输
-          console.log('大图片分块传输，总块数:', data.totalChunks);
+          console.log('📦 大图片分块传输，总块数:', data.totalChunks, '总大小:', Math.round(data.totalSize / 1024) + 'KB');
           totalChunks = data.totalChunks;
           receivedChunks = new Array(totalChunks);
           
@@ -358,18 +515,18 @@
           updateStatus('正在接收图片...', 'waiting');
           
           // 请求第一个分块
-          console.log('请求第一个分块');
+          console.log('→ 请求第一个分块 (0/' + data.totalChunks + ')');
           socket.emit('request-next-chunk', {
             roomId: roomId,
             chunkIndex: 0
           });
         } else {
           // 小图片，直接获取
-          console.log('小图片，等待直接传输');
+          console.log('📄 小图片，等待直接传输');
           updateStatus('正在接收图片...', 'waiting');
         }
       } else {
-        console.log('房间内暂无图片，等待发送');
+        console.warn('⚠ 房间内暂无图片，等待发送');
         updateStatus('✓ 已连接，等待接收图片...', 'connected');
       }
     });
@@ -401,7 +558,7 @@
     
     // 监听分块数据
     socket.on('image-chunk', (data) => {
-      console.log('收到分块:', data.chunkIndex + 1, '/', data.totalChunks, '大小:', Math.round(data.chunk.length / 1024), 'KB');
+      console.log('← 收到分块:', (data.chunkIndex + 1) + '/' + data.totalChunks, '大小:', Math.round(data.chunk.length / 1024) + 'KB');
       
       // 存储分块
       receivedChunks[data.chunkIndex] = data.chunk;
@@ -412,6 +569,7 @@
       progressText.textContent = `接收中... ${progress}%`;
       
       // 通知服务器当前进度（让服务器转发给发送者）
+      console.log('→ 上报进度:', progress + '%');
       socket.emit('phone-progress-update', {
         roomId: roomId,
         progress: progress,
@@ -422,7 +580,7 @@
       // 如果不是最后一块，请求下一块
       if (!data.isLastChunk) {
         const nextIndex = data.chunkIndex + 1;
-        console.log('请求下一个分块:', nextIndex);
+        console.log('→ 请求下一个分块:', (nextIndex + 1) + '/' + data.totalChunks);
         
         // 延迟一小段时间，避免请求过快
         setTimeout(() => {
@@ -433,10 +591,10 @@
         }, 10); // 10ms 延迟
       } else {
         // 最后一块，组合所有分块
-        console.log('接收完成，组合图片数据');
+        console.log('✓ 接收完成，组合图片数据');
         const fullImageData = receivedChunks.join('');
         
-        console.log('组合后的图片大小:', Math.round(fullImageData.length / 1024), 'KB');
+        console.log('✓ 组合后的图片大小:', Math.round(fullImageData.length / 1024) + 'KB');
         
         // 显示图片
         showReceivedImage(fullImageData);
@@ -447,6 +605,7 @@
         }, 1000);
         
         // 通知服务器：手机已收到图片
+        console.log('→ 通知服务器：图片已接收');
         socket.emit('phone-received-image', roomId);
       }
     });
@@ -468,6 +627,7 @@
     });
 
     socket.on('disconnect', () => {
+      console.error('✗ 连接已断开');
       updateStatus('连接已断开', 'error');
     });
 
