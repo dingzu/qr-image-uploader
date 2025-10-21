@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>扫码上传图片助手 - 设置</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+      background: #f5f5f5;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 40px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+
+    .section {
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #000;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"],
+    input[type="url"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: 'Courier New', monospace;
+      transition: all 0.2s;
+    }
+
+    input[type="text"]:focus,
+    input[type="url"]:focus {
+      outline: none;
+      border-color: #000;
+      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #666;
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .button {
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid;
+    }
+
+    .button-primary {
+      background: #000;
+      color: white;
+      border-color: #000;
+    }
+
+    .button-primary:hover {
+      background: #333;
+    }
+
+    .button-secondary {
+      background: white;
+      color: #000;
+      border-color: #e0e0e0;
+    }
+
+    .button-secondary:hover {
+      border-color: #000;
+      background: #fafafa;
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 20px;
+      display: none;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .alert.show {
+      display: block;
+    }
+
+    .alert-success {
+      background: #e8f5e9;
+      border: 1px solid #4caf50;
+      color: #2e7d32;
+    }
+
+    .alert-error {
+      background: #ffebee;
+      border: 1px solid #f44336;
+      color: #c62828;
+    }
+
+    .info-box {
+      background: #f5f5f5;
+      padding: 16px;
+      border-radius: 6px;
+      border-left: 3px solid #000;
+      margin-bottom: 20px;
+    }
+
+    .info-box-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: #000;
+      margin-bottom: 8px;
+    }
+
+    .info-box-content {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    .example-list {
+      list-style: none;
+      padding: 0;
+      margin-top: 12px;
+    }
+
+    .example-list li {
+      padding: 8px 12px;
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+      color: #333;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .example-list li:hover {
+      border-color: #000;
+      background: white;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .feature-card {
+      padding: 16px;
+      background: #fafafa;
+      border-radius: 6px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .feature-card-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .feature-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 4px;
+    }
+
+    .feature-card-desc {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .divider {
+      height: 1px;
+      background: #e0e0e0;
+      margin: 32px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>
+      <span>⚙️</span>
+      <span>插件设置</span>
+    </h1>
+    <p class="subtitle">配置扫码上传图片助手的服务器地址</p>
+
+    <div class="alert alert-success" id="successAlert">
+      ✓ 设置保存成功！
+    </div>
+
+    <div class="alert alert-error" id="errorAlert">
+      ✗ 保存失败，请检查 URL 格式
+    </div>
+
+    <div class="section">
+      <div class="section-title">基础配置</div>
+
+      <div class="info-box">
+        <div class="info-box-title">📡 服务器地址说明</div>
+        <div class="info-box-content">
+          配置一个可以访问到 PC 端上传页面的 URL 地址。插件会在用户选择"扫码上传"时加载这个页面。
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="uploadUrl">服务器 URL</label>
+        <input 
+          type="url" 
+          id="uploadUrl" 
+          placeholder="https://qr-image-uploader.onrender.com/"
+          required
+        >
+        <div class="hint">
+          ⚠️ 请确保 URL 以 http:// 或 https:// 开头，且以 / 结尾
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>示例地址 (点击使用)</label>
+        <ul class="example-list">
+          <li data-url="https://qr-image-uploader.onrender.com/">
+            https://qr-image-uploader.onrender.com/
+          </li>
+          <li data-url="http://localhost:3000/">
+            http://localhost:3000/ (本地开发)
+          </li>
+        </ul>
+      </div>
+
+      <div class="button-group">
+        <button class="button button-primary" id="saveBtn">💾 保存设置</button>
+        <button class="button button-secondary" id="resetBtn">🔄 恢复默认</button>
+        <button class="button button-secondary" id="testBtn">🔍 测试连接</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section">
+      <div class="section-title">功能特性</div>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-card-icon">📱</div>
+          <div class="feature-card-title">扫码上传</div>
+          <div class="feature-card-desc">
+            使用手机扫描二维码，快速上传图片到电脑
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-icon">🖼️</div>
+          <div class="feature-card-title">智能拦截</div>
+          <div class="feature-card-desc">
+            自动识别文件上传操作，提供扫码选项
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-icon">⚡</div>
+          <div class="feature-card-title">无缝集成</div>
+          <div class="feature-card-desc">
+            不影响原有上传流程，可随时切换
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card-icon">🔒</div>
+          <div class="feature-card-title">安全可靠</div>
+          <div class="feature-card-desc">
+            所有数据通过 WebSocket 实时传输
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section">
+      <div class="section-title">使用说明</div>
+      <div class="info-box">
+        <div class="info-box-content">
+          <ol style="margin-left: 20px; line-height: 2;">
+            <li>在任何网页上点击文件上传按钮</li>
+            <li>在弹出的对话框中选择"扫码上传"</li>
+            <li>使用手机扫描二维码</li>
+            <li>在手机上选择并上传图片</li>
+            <li>图片会自动传输到电脑端</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
+

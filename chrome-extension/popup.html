@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>扫码上传图片助手v1</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 320px;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+      background: white;
+    }
+
+    h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section {
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .info-box {
+      background: #f5f5f5;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #666;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #e8f5e9;
+      border: 1px solid #4caf50;
+      border-radius: 6px;
+      color: #2e7d32;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+
+    .status-icon {
+      font-size: 16px;
+    }
+
+    .button {
+      width: 100%;
+      padding: 10px 16px;
+      background: #000;
+      color: white;
+      border: 1px solid #000;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 8px;
+    }
+
+    .button:hover {
+      background: white;
+      color: #000;
+    }
+
+    .button-secondary {
+      background: white;
+      color: #000;
+      border: 1px solid #e0e0e0;
+    }
+
+    .button-secondary:hover {
+      border-color: #000;
+      background: #fafafa;
+    }
+
+    .current-url {
+      font-size: 12px;
+      color: #666;
+      padding: 8px;
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      word-break: break-all;
+      font-family: 'Courier New', monospace;
+    }
+
+    .divider {
+      height: 1px;
+      background: #e0e0e0;
+      margin: 16px 0;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: #999;
+      margin-top: 16px;
+    }
+
+    .feature-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .feature-list li {
+      padding: 6px 0;
+      font-size: 13px;
+      color: #666;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .feature-list li::before {
+      content: '✓';
+      color: #4caf50;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>
+    <span>📱</span>
+    <span>扫码上传助手v1</span>
+  </h1>
+
+  <div class="section">
+    <div class="status">
+      <span class="status-icon">✓</span>
+      <span>插件已启用</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">使用说明</div>
+    <ul class="feature-list">
+      <li>点击任何文件上传按钮</li>
+      <li>选择"扫码上传"选项</li>
+      <li>使用手机扫码上传图片</li>
+    </ul>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-title">当前配置</div>
+    <div class="current-url" id="currentUrl">加载中...</div>
+  </div>
+
+  <div class="section">
+    <button class="button" id="openOptions">⚙️ 打开设置</button>
+    <button class="button button-secondary" id="testConnection">🔍 测试连接</button>
+  </div>
+
+  <div class="footer">
+    版本 1.0.0
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
+

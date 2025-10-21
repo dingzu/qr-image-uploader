@@ -1,0 +1,18 @@
+# Chrome Extension gitignore
+
+# 打包生成的文件
+*.crx
+*.pem
+*.zip
+
+# macOS
+.DS_Store
+
+# 编辑器
+.vscode/
+.idea/
+
+# 临时文件
+*.log
+*.tmp
+

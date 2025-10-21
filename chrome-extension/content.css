@@ -1,0 +1,182 @@
+/* QR Upload Modal Styles */
+#qr-upload-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999999;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+}
+
+.qr-upload-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: qr-fade-in 0.2s ease-out;
+}
+
+@keyframes qr-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.qr-upload-modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: qr-slide-up 0.3s ease-out;
+}
+
+@keyframes qr-slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.qr-upload-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.qr-upload-close:hover {
+  background: #f0f0f0;
+  color: #000;
+}
+
+.qr-upload-title {
+  color: #000;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+.qr-upload-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.qr-upload-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.qr-upload-option:hover {
+  border-color: #000;
+  background: #fafafa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.qr-upload-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.qr-upload-text h3 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #000;
+}
+
+.qr-upload-text p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.qr-upload-qr-section {
+  margin-top: 20px;
+}
+
+.qr-upload-back {
+  display: inline-block;
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  transition: all 0.2s;
+}
+
+.qr-upload-back:hover {
+  background: #e0e0e0;
+  color: #000;
+}
+
+/* 响应式设计 */
+@media (max-width: 600px) {
+  .qr-upload-modal-content {
+    padding: 24px;
+    width: 95%;
+  }
+
+  .qr-upload-title {
+    font-size: 20px;
+  }
+
+  .qr-upload-icon {
+    font-size: 36px;
+  }
+
+  .qr-upload-text h3 {
+    font-size: 16px;
+  }
+
+  .qr-upload-text p {
+    font-size: 13px;
+  }
+}
+
+/* iframe 全屏模式 */
+.qr-upload-qr-section iframe {
+  border-radius: 8px;
+}
+

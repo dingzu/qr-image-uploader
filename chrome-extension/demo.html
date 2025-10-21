@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>插件测试页面</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      color: #000;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      font-size: 16px;
+      margin-bottom: 40px;
+    }
+
+    .upload-section {
+      background: #f8f9fa;
+      border: 2px dashed #dee2e6;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      margin-bottom: 30px;
+      transition: all 0.3s;
+    }
+
+    .upload-section:hover {
+      border-color: #667eea;
+      background: #f0f0ff;
+    }
+
+    .upload-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+
+    .upload-label {
+      display: inline-block;
+      padding: 14px 32px;
+      background: #667eea;
+      color: white;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .upload-label:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .upload-label:active {
+      transform: translateY(0);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .hint {
+      margin-top: 16px;
+      color: #999;
+      font-size: 14px;
+    }
+
+    .preview-section {
+      display: none;
+      margin-top: 30px;
+    }
+
+    .preview-section.show {
+      display: block;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .preview-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 16px;
+    }
+
+    .preview-image {
+      width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1px solid #dee2e6;
+      background: #f8f9fa;
+    }
+
+    .file-info {
+      margin-top: 16px;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      text-align: left;
+    }
+
+    .file-info p {
+      margin: 8px 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .file-info strong {
+      color: #000;
+      font-weight: 600;
+    }
+
+    .buttons {
+      margin-top: 20px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .button {
+      padding: 10px 24px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .button-primary {
+      background: #28a745;
+      color: white;
+    }
+
+    .button-primary:hover {
+      background: #218838;
+    }
+
+    .button-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .button-secondary:hover {
+      background: #5a6268;
+    }
+
+    .instructions {
+      background: #fff9e6;
+      border-left: 4px solid #ffc107;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 30px;
+    }
+
+    .instructions h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 12px;
+    }
+
+    .instructions ol {
+      margin-left: 20px;
+      color: #666;
+      line-height: 1.8;
+    }
+
+    .instructions li {
+      margin: 8px 0;
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+      display: none;
+    }
+
+    .status.show {
+      display: block;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      color: #999;
+      font-size: 13px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: #667eea;
+      color: white;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔌 插件测试页面 <span class="badge">Demo</span></h1>
+    <p class="subtitle">测试 Chrome 扫码上传插件的功能</p>
+
+    <div class="upload-section">
+      <div class="upload-icon">📁</div>
+      <label for="fileInput" class="upload-label">
+        选择图片文件
+      </label>
+      <input type="file" id="fileInput" accept="image/*">
+      <div class="hint">点击按钮选择图片，插件会自动拦截并提供扫码上传选项</div>
+    </div>
+
+    <div class="preview-section" id="previewSection">
+      <div class="preview-title">预览</div>
+      <img id="previewImage" class="preview-image" src="" alt="预览">
+      <div class="file-info" id="fileInfo"></div>
+      <div class="buttons">
+        <button class="button button-primary" onclick="uploadFile()">✓ 确认上传</button>
+        <button class="button button-secondary" onclick="clearFile()">✕ 清除</button>
+      </div>
+    </div>
+
+    <div class="status success" id="status"></div>
+
+    <div class="instructions">
+      <h3>💡 使用说明</h3>
+      <ol>
+        <li>确保已安装并启用 Chrome 插件</li>
+        <li>点击上方的"选择图片文件"按钮</li>
+        <li>插件会弹出对话框，选择"📱 扫码上传"</li>
+        <li>使用手机扫描二维码并上传图片</li>
+        <li>图片会自动显示在此页面中</li>
+      </ol>
+    </div>
+
+    <div class="footer">
+      这是一个测试页面，用于验证插件功能 | 
+      <a href="chrome://extensions/" style="color: #667eea;">管理插件</a>
+    </div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const previewSection = document.getElementById('previewSection');
+    const previewImage = document.getElementById('previewImage');
+    const fileInfo = document.getElementById('fileInfo');
+    const status = document.getElementById('status');
+
+    // 监听文件选择
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        displayFile(file);
+      }
+    });
+
+    // 显示文件
+    function displayFile(file) {
+      // 显示预览区域
+      previewSection.classList.add('show');
+
+      // 显示图片
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        previewImage.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+
+      // 显示文件信息
+      fileInfo.innerHTML = `
+        <p><strong>文件名:</strong> ${file.name}</p>
+        <p><strong>文件大小:</strong> ${formatFileSize(file.size)}</p>
+        <p><strong>文件类型:</strong> ${file.type}</p>
+        <p><strong>最后修改:</strong> ${new Date(file.lastModified).toLocaleString('zh-CN')}</p>
+      `;
+
+      // 显示成功消息
+      showStatus('✓ 文件已选择成功！插件正常工作。');
+    }
+
+    // 格式化文件大小
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    // 显示状态消息
+    function showStatus(message) {
+      status.textContent = message;
+      status.classList.add('show');
+      setTimeout(() => {
+        status.classList.remove('show');
+      }, 3000);
+    }
+
+    // 上传文件（模拟）
+    function uploadFile() {
+      showStatus('✓ 文件上传成功！（这是模拟的）');
+    }
+
+    // 清除文件
+    function clearFile() {
+      fileInput.value = '';
+      previewSection.classList.remove('show');
+      previewImage.src = '';
+      fileInfo.innerHTML = '';
+    }
+
+    // 监听拖拽
+    const uploadSection = document.querySelector('.upload-section');
+    
+    uploadSection.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadSection.style.borderColor = '#667eea';
+      uploadSection.style.background = '#f0f0ff';
+    });
+
+    uploadSection.addEventListener('dragleave', () => {
+      uploadSection.style.borderColor = '#dee2e6';
+      uploadSection.style.background = '#f8f9fa';
+    });
+
+    uploadSection.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadSection.style.borderColor = '#dee2e6';
+      uploadSection.style.background = '#f8f9fa';
+      
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        // 创建 DataTransfer 对象
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        fileInput.files = dataTransfer.files;
+        
+        // 触发 change 事件
+        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+  </script>
+</body>
+</html>
+

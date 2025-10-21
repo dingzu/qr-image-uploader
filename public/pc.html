@@ -754,6 +754,18 @@
       // 添加到历史记录
       addImageToHistory(imageData);
       
+      // 如果在 iframe 中，发送消息给父窗口（用于 Chrome 插件）
+      if (window.parent !== window) {
+        try {
+          window.parent.postMessage({
+            type: 'qr-upload-image',
+            imageData: imageData
+          }, '*');
+        } catch (e) {
+          console.log('无法发送消息给父窗口:', e);
+        }
+      }
+      
       // 更新状态
       const statusEl = document.getElementById('status');
       statusEl.className = 'status connected';
