@@ -466,6 +466,90 @@
         reject(new Error('连接服务器超时'));
       }, 10000); // 10秒超时
       
+      // 先设置所有事件监听器（在 connect 之前）
+      // 监听发送成功确认
+      socket.on('image-send-success', () => {
+        console.log('Image Sender: 服务器确认图片已存储，等待手机扫码...');
+        
+        // 更新状态
+        const statusEl = document.querySelector('.qr-image-sender-status');
+        if (statusEl) {
+          statusEl.className = 'qr-image-sender-status success';
+          statusEl.innerHTML = '<span>✓</span><span>使用 KIM 扫码</span>';
+        }
+      });
+      
+      // 监听手机端扫码加入房间的通知
+      socket.on('phone-joined-room', () => {
+        console.log('Image Sender: 手机端已扫码加入房间！');
+        
+        // 更新状态：手机已连接
+        const statusEl = document.querySelector('.qr-image-sender-status');
+        if (statusEl) {
+          statusEl.className = 'qr-image-sender-status waiting';
+          statusEl.innerHTML = '<span class="qr-image-sender-loading"></span><span>手机已连接，正在传输...</span>';
+        }
+        
+        // 显示进度条
+        const progressContainer = document.querySelector('.qr-image-sender-progress-container');
+        if (progressContainer) {
+          progressContainer.style.display = 'block';
+        }
+      });
+      
+      // 监听传输开始（服务器已发送分块给手机端）
+      socket.on('image-transfer-start', (data) => {
+        console.log('Image Sender: 开始传输，总块数:', data.totalChunks);
+        
+        const progressContainer = document.querySelector('.qr-image-sender-progress-container');
+        if (progressContainer) {
+          progressContainer.style.display = 'block';
+        }
+      });
+      
+      // 监听来自手机端的进度反馈（服务器转发）
+      socket.on('sender-progress-update', (data) => {
+        console.log('Image Sender: 接收端进度:', data.progress + '%');
+        
+        // 更新进度条
+        const progressFill = document.querySelector('.qr-image-sender-progress-fill');
+        const progressText = document.querySelector('.qr-image-sender-progress-text');
+        
+        if (progressFill && progressText) {
+          progressFill.style.width = data.progress + '%';
+          progressText.textContent = `传输中... ${data.progress}%`;
+        }
+      });
+      
+      // 监听图片成功发送到手机
+      socket.on('image-received-by-phone', () => {
+        console.log('Image Sender: 手机已收到图片');
+        
+        // 更新状态
+        const statusEl = document.querySelector('.qr-image-sender-status');
+        if (statusEl) {
+          statusEl.className = 'qr-image-sender-status success';
+          statusEl.innerHTML = '<span>✓</span><span>图片已发送到手机！</span>';
+        }
+        
+        // 隐藏进度条，显示 100%
+        const progressFill = document.querySelector('.qr-image-sender-progress-fill');
+        const progressText = document.querySelector('.qr-image-sender-progress-text');
+        const progressContainer = document.querySelector('.qr-image-sender-progress-container');
+        
+        if (progressFill && progressText) {
+          progressFill.style.width = '100%';
+          progressText.textContent = '传输完成！';
+          
+          // 2秒后隐藏进度条
+          setTimeout(() => {
+            if (progressContainer) {
+              progressContainer.style.display = 'none';
+            }
+          }, 2000);
+        }
+      });
+      
       socket.on('connect', () => {
         console.log('Image Sender: 已连接到服务器，Socket ID:', socket.id);
         clearTimeout(connectTimeout);
@@ -479,91 +563,6 @@
         socket.emit('send-image-to-phone', {
           roomId: roomId,
           imageData: imageData
-        });
-        
-        // 监听发送成功确认
-        socket.on('image-send-success', () => {
-          console.log('Image Sender: 服务器确认图片已存储，等待手机扫码...');
-          
-          // 更新状态
-          const statusEl = document.querySelector('.qr-image-sender-status');
-          if (statusEl) {
-            statusEl.className = 'qr-image-sender-status success';
-            statusEl.innerHTML = '<span>✓</span><span>使用 KIM 扫码</span>';
-          }
-        });
-        
-        // 监听手机端扫码加入房间的通知
-        socket.on('phone-joined-room', () => {
-          console.log('Image Sender: 手机端已扫码加入房间！');
-          
-          // 更新状态：手机已连接
-          const statusEl = document.querySelector('.qr-image-sender-status');
-          if (statusEl) {
-            statusEl.className = 'qr-image-sender-status waiting';
-            statusEl.innerHTML = '<span class="qr-image-sender-loading"></span><span>手机已连接，正在传输...</span>';
-          }
-          
-          // 显示进度条
-          const progressContainer = document.querySelector('.qr-image-sender-progress-container');
-          if (progressContainer) {
-            progressContainer.style.display = 'block';
-          }
-        });
-        
-        // 监听传输开始
-        socket.on('image-transfer-start', (data) => {
-          console.log('Image Sender: 开始传输，总块数:', data.totalChunks);
-          
-          const progressContainer = document.querySelector('.qr-image-sender-progress-container');
-          if (progressContainer) {
-            progressContainer.style.display = 'block';
-          }
-        });
-        
-        // 监听传输进度（用于估算）
-        let transferStartTime = Date.now();
-        socket.on('image-chunk', (data) => {
-          const progress = Math.round(((data.chunkIndex + 1) / data.totalChunks) * 100);
-          console.log('Image Sender: 传输进度:', progress + '%');
-          
-          // 更新进度条（估算发送进度）
-          const progressFill = document.querySelector('.qr-image-sender-progress-fill');
-          const progressText = document.querySelector('.qr-image-sender-progress-text');
-          
-          if (progressFill && progressText) {
-            progressFill.style.width = progress + '%';
-            progressText.textContent = `传输中... ${progress}%`;
-          }
-        });
-        
-        // 监听图片成功发送到手机
-        socket.on('image-received-by-phone', () => {
-          console.log('Image Sender: 手机已收到图片');
-          
-          // 更新状态
-          const statusEl = document.querySelector('.qr-image-sender-status');
-          if (statusEl) {
-            statusEl.className = 'qr-image-sender-status success';
-            statusEl.innerHTML = '<span>✓</span><span>图片已发送到手机！</span>';
-          }
-          
-          // 隐藏进度条，显示 100%
-          const progressFill = document.querySelector('.qr-image-sender-progress-fill');
-          const progressText = document.querySelector('.qr-image-sender-progress-text');
-          const progressContainer = document.querySelector('.qr-image-sender-progress-container');
-          
-          if (progressFill && progressText) {
-            progressFill.style.width = '100%';
-            progressText.textContent = '传输完成！';
-            
-            // 2秒后隐藏进度条
-            setTimeout(() => {
-              if (progressContainer) {
-                progressContainer.style.display = 'none';
-              }
-            }, 2000);
-          }
         });
         
         resolve();

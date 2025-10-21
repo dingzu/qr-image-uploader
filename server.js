@@ -155,6 +155,17 @@ io.on('connection', (socket) => {
     console.log(`图片已存储并广播到房间 ${roomId}`);
   });
 
+  // 手机端上报进度
+  socket.on('phone-progress-update', (data) => {
+    console.log(`手机端进度更新，房间: ${data.roomId}, 进度: ${data.progress}%`);
+    // 转发进度到房间内的发送者
+    socket.to(data.roomId).emit('sender-progress-update', {
+      progress: data.progress,
+      chunkIndex: data.chunkIndex,
+      totalChunks: data.totalChunks
+    });
+  });
+
   // 手机端通知已收到图片
   socket.on('phone-received-image', (roomId) => {
     console.log(`手机端确认收到图片，房间: ${roomId}`);

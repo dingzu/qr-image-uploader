@@ -367,6 +367,14 @@
       progressFill.style.width = progress + '%';
       progressText.textContent = `接收中... ${progress}%`;
       
+      // 通知服务器当前进度（让服务器转发给发送者）
+      socket.emit('phone-progress-update', {
+        roomId: roomId,
+        progress: progress,
+        chunkIndex: data.chunkIndex,
+        totalChunks: data.totalChunks
+      });
+      
       // 如果是最后一块，组合所有分块
       if (data.isLastChunk) {
         console.log('接收完成，组合图片数据');
