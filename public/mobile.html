@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>手机端 - 上传图片</title>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 30px;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 28px;
+      text-align: center;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .upload-section {
+      text-align: center;
+    }
+
+    .upload-area {
+      border: 3px dashed #667eea;
+      border-radius: 15px;
+      padding: 40px 20px;
+      margin-bottom: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #f8f9fa;
+    }
+
+    .upload-area:hover {
+      background: #e9ecef;
+      border-color: #764ba2;
+    }
+
+    .upload-area.dragover {
+      background: #e7f3ff;
+      border-color: #667eea;
+    }
+
+    .upload-icon {
+      font-size: 64px;
+      margin-bottom: 15px;
+    }
+
+    .upload-text {
+      color: #666;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .upload-hint {
+      color: #999;
+      font-size: 12px;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .preview-section {
+      display: none;
+      margin-top: 20px;
+    }
+
+    .preview-section.show {
+      display: block;
+    }
+
+    .preview-image {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .status.warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .file-info {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      text-align: left;
+    }
+
+    .file-info p {
+      color: #666;
+      font-size: 14px;
+      margin: 5px 0;
+    }
+
+    .file-info strong {
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📸 上传图片</h1>
+    <p class="subtitle">选择或拖拽图片到下方区域</p>
+    
+    <div class="upload-section">
+      <div class="upload-area" id="uploadArea">
+        <div class="upload-icon">📁</div>
+        <div class="upload-text">点击选择图片</div>
+        <div class="upload-hint">或拖拽图片到此处</div>
+      </div>
+      <input type="file" id="fileInput" accept="image/*">
+      
+      <div class="preview-section" id="previewSection">
+        <img id="previewImage" class="preview-image" src="" alt="预览">
+        <div class="file-info" id="fileInfo"></div>
+        <button class="btn" id="uploadBtn">上传图片</button>
+      </div>
+    </div>
+
+    <div class="status info" id="status">
+      <span class="loading"></span>
+      正在连接...
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+    const roomId = getRoomIdFromUrl();
+    let selectedFile = null;
+
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const previewSection = document.getElementById('previewSection');
+    const previewImage = document.getElementById('previewImage');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const statusEl = document.getElementById('status');
+    const fileInfo = document.getElementById('fileInfo');
+
+    // 从 URL 获取房间 ID
+    function getRoomIdFromUrl() {
+      const path = window.location.pathname;
+      const match = path.match(/\/upload\/(.+)/);
+      return match ? match[1] : null;
+    }
+
+    // 更新状态
+    function updateStatus(message, type = 'info') {
+      statusEl.className = `status ${type}`;
+      statusEl.innerHTML = message;
+    }
+
+    // 格式化文件大小
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    // 点击上传区域
+    uploadArea.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    // 文件选择
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        handleFile(file);
+      }
+    });
+
+    // 拖拽事件
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        handleFile(file);
+      } else {
+        updateStatus('请选择图片文件', 'error');
+      }
+    });
+
+    // 处理文件
+    function handleFile(file) {
+      selectedFile = file;
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        previewImage.src = e.target.result;
+        previewSection.classList.add('show');
+        
+        // 显示文件信息
+        fileInfo.innerHTML = `
+          <p><strong>文件名:</strong> ${file.name}</p>
+          <p><strong>文件大小:</strong> ${formatFileSize(file.size)}</p>
+          <p><strong>文件类型:</strong> ${file.type}</p>
+        `;
+        
+        updateStatus('图片已选择，点击上传按钮', 'success');
+      };
+      
+      reader.readAsDataURL(file);
+    }
+
+    // 上传按钮
+    uploadBtn.addEventListener('click', () => {
+      if (selectedFile) {
+        uploadImage();
+      }
+    });
+
+    // 上传图片
+    function uploadImage() {
+      uploadBtn.disabled = true;
+      updateStatus('<span class="loading"></span>正在上传...', 'info');
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        socket.emit('upload-image', {
+          roomId: roomId,
+          imageData: e.target.result
+        });
+      };
+      reader.readAsDataURL(selectedFile);
+    }
+
+    // Socket 连接
+    socket.on('connect', () => {
+      console.log('已连接到服务器');
+      if (roomId) {
+        socket.emit('join-room', roomId);
+      } else {
+        updateStatus('无效的房间号', 'error');
+      }
+    });
+
+    socket.on('room-joined', () => {
+      updateStatus('已连接到 PC，请选择图片', 'success');
+    });
+
+    socket.on('room-not-found', () => {
+      updateStatus('房间不存在，请重新扫码', 'error');
+    });
+
+    socket.on('upload-success', () => {
+      updateStatus('✓ 上传成功！', 'success');
+      uploadBtn.disabled = false;
+      
+      // 3秒后可以继续上传
+      setTimeout(() => {
+        updateStatus('可以继续上传更多图片', 'info');
+      }, 3000);
+    });
+
+    socket.on('disconnect', () => {
+      updateStatus('连接已断开', 'error');
+    });
+  </script>
+</body>
+</html>
+

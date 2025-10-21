@@ -1,0 +1,21 @@
+{
+  "name": "qr-image-uploader",
+  "version": "1.0.0",
+  "description": "扫码上传图片服务",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "echo 'No build step required'",
+    "start": "node server.js"
+  },
+  "keywords": ["qr-code", "image-upload", "websocket"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "qrcode": "^1.5.3",
+    "socket.io": "^4.6.1",
+    "socket.io-client": "^4.6.1"
+  }
+}
+
