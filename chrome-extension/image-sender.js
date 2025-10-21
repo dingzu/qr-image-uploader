@@ -122,6 +122,7 @@
     btn.style.cssText = `
       padding: 8px 16px;
       background: rgba(0, 0, 0, 0.85);
+      border: 1px solid #fff;
       color: white;
       border: none;
       border-radius: 6px;
@@ -185,44 +186,62 @@
     return new Promise((resolve, reject) => {
       // 方法 1: 如果是 data URL，直接返回
       if (img.src.startsWith('data:')) {
+        console.log('Image Sender: 使用 data URL');
         resolve(img.src);
         return;
       }
       
-      // 方法 2: 如果是同源图片，使用 canvas 获取
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth || img.width;
-        canvas.height = img.naturalHeight || img.height;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        
-        // 使用 PNG 格式，质量 1.0（不压缩）
-        canvas.toBlob(blob => {
+      // 方法 2: 尝试使用 fetch 获取（支持跨域）
+      console.log('Image Sender: 尝试 fetch 获取图片');
+      fetch(img.src, {
+        mode: 'cors',
+        credentials: 'omit'
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Fetch failed: ' + response.status);
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          console.log('Image Sender: Fetch 成功，转换为 data URL');
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result);
           reader.onerror = reject;
           reader.readAsDataURL(blob);
-        }, 'image/png', 1.0);
-      } catch (error) {
-        // 方法 3: 跨域图片，使用 fetch
-        console.log('Image Sender: Canvas 失败，尝试 fetch', error);
-        
-        fetch(img.src)
-          .then(response => response.blob())
-          .then(blob => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          })
-          .catch(fetchError => {
-            // 方法 4: 都失败了，直接返回 URL
-            console.log('Image Sender: Fetch 失败，返回 URL', fetchError);
+        })
+        .catch(fetchError => {
+          console.log('Image Sender: Fetch 失败，尝试 Canvas', fetchError);
+          
+          // 方法 3: 尝试 Canvas（仅同源）
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            
+            // 尝试导出 - 如果是跨域图片会失败
+            canvas.toBlob(blob => {
+              if (blob) {
+                console.log('Image Sender: Canvas 成功');
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              } else {
+                // Canvas 污染，直接使用 URL
+                console.log('Image Sender: Canvas 污染，使用原始 URL');
+                resolve(img.src);
+              }
+            }, 'image/png', 1.0);
+          } catch (canvasError) {
+            // 方法 4: Canvas 也失败，直接返回 URL
+            console.log('Image Sender: Canvas 失败，使用原始 URL', canvasError);
             resolve(img.src);
-          });
-      }
+          }
+        });
     });
   }
 
@@ -298,6 +317,9 @@
       const htmlBlob = new Blob([downloadPage], { type: 'text/html' });
       const blobUrl = URL.createObjectURL(htmlBlob);
       
+      // 等待 QRCode 库加载
+      await ensureQRCodeLoaded();
+      
       // 生成二维码（使用 blob URL）
       const qrcodeContainer = document.getElementById('qr-image-sender-qrcode');
       if (qrcodeContainer && window.QRCode) {
@@ -342,6 +364,46 @@
         statusEl.innerHTML = '<span>✗</span><span>生成失败，请重试</span>';
       }
     }
+  }
+  
+  // 确保 QRCode 库已加载
+  function ensureQRCodeLoaded() {
+    return new Promise((resolve, reject) => {
+      if (window.QRCode) {
+        resolve();
+        return;
+      }
+      
+      // 检查是否已经有加载中的脚本
+      const existingScript = document.querySelector('script[src*="qrcode"]');
+      if (existingScript) {
+        // 等待现有脚本加载
+        existingScript.addEventListener('load', () => resolve());
+        existingScript.addEventListener('error', () => reject(new Error('QRCode 库加载失败')));
+        return;
+      }
+      
+      // 加载 QRCode 库
+      console.log('Image Sender: 加载 QRCode 库');
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+      script.onload = () => {
+        console.log('Image Sender: QRCode 库加载成功');
+        resolve();
+      };
+      script.onerror = () => {
+        console.error('Image Sender: QRCode 库加载失败');
+        reject(new Error('QRCode 库加载失败'));
+      };
+      document.head.appendChild(script);
+      
+      // 设置超时
+      setTimeout(() => {
+        if (!window.QRCode) {
+          reject(new Error('QRCode 库加载超时'));
+        }
+      }, 10000);
+    });
   }
   
   // 创建下载页面
@@ -682,14 +744,6 @@
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
-  }
-
-  // 动态加载 QRCode 库（如果需要）
-  if (!window.QRCode) {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
-    script.async = true;
-    document.head.appendChild(script);
   }
 
 })();
