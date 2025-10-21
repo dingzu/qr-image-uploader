@@ -451,12 +451,14 @@
     try {
       console.log('Image Sender: 初始化 Socket 连接');
       
-      // 连接到服务器
+      // 标志位：确保只发送一次图片
+      let imageSent = false;
+      let roomJoined = false;
+      
+      // 连接到服务器（禁用自动重连，因为图片传输是一次性的）
       const socket = io(serverUrl, {
         transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionAttempts: 3,
-        reconnectionDelay: 1000
+        reconnection: false
       });
       
       // 连接超时处理
@@ -541,11 +543,14 @@
           progressFill.style.width = '100%';
           progressText.textContent = '传输完成！';
           
-          // 2秒后隐藏进度条
+          // 2秒后隐藏进度条并断开连接
           setTimeout(() => {
             if (progressContainer) {
               progressContainer.style.display = 'none';
             }
+            // 传输完成，断开连接释放资源
+            console.log('Image Sender: 传输完成，断开连接');
+            socket.disconnect();
           }, 2000);
         }
       });
@@ -554,18 +559,27 @@
         console.log('Image Sender: 已连接到服务器，Socket ID:', socket.id);
         clearTimeout(connectTimeout);
         
-        // 浏览器端也加入房间，这样可以监听房间内的事件
-        socket.emit('join-sender-room', roomId);
-        console.log('Image Sender: 已加入发送者房间', roomId);
+        // 浏览器端加入房间（只在第一次连接时）
+        if (!roomJoined) {
+          socket.emit('join-sender-room', roomId);
+          console.log('Image Sender: 已加入发送者房间', roomId);
+          roomJoined = true;
+        } else {
+          console.log('Image Sender: 重连后自动重新加入房间', roomId);
+        }
         
-        // 立即发送图片到房间（存储在服务器，等待手机扫码后接收）
-        console.log('Image Sender: 发送图片到服务器，房间:', roomId, '图片大小:', Math.round(imageData.length / 1024), 'KB');
-        socket.emit('send-image-to-phone', {
-          roomId: roomId,
-          imageData: imageData
-        });
-        
-        resolve();
+        // 只发送一次图片（避免重连时重复发送）
+        if (!imageSent) {
+          console.log('Image Sender: 发送图片到服务器，房间:', roomId, '图片大小:', Math.round(imageData.length / 1024), 'KB');
+          socket.emit('send-image-to-phone', {
+            roomId: roomId,
+            imageData: imageData
+          });
+          imageSent = true;
+          resolve();
+        } else {
+          console.log('Image Sender: 图片已发送，跳过重复发送');
+        }
       });
       
       socket.on('connect_error', (error) => {
