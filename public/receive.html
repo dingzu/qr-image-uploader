@@ -331,10 +331,47 @@
 
     socket.on('receive-room-joined', () => {
       console.log('已加入接收房间');
-      updateStatus('✓ 已连接，等待接收图片...', 'connected');
+      updateStatus('✓ 已连接，检查是否有待接收图片...', 'connected');
       
       // 请求获取房间内已有的图片（如果有）
       socket.emit('request-room-image', roomId);
+    });
+    
+    // 监听房间图片信息（服务器响应 request-room-image）
+    socket.on('room-image-info', (data) => {
+      console.log('收到房间图片信息:', data);
+      
+      if (data.hasImage) {
+        console.log('房间内有图片，开始接收');
+        
+        if (data.isChunked) {
+          // 大图片，分块传输
+          console.log('大图片分块传输，总块数:', data.totalChunks);
+          totalChunks = data.totalChunks;
+          receivedChunks = new Array(totalChunks);
+          
+          // 显示进度条
+          progressContainer.style.display = 'block';
+          progressFill.style.width = '0%';
+          progressText.textContent = '接收中... 0%';
+          
+          updateStatus('正在接收图片...', 'waiting');
+          
+          // 请求第一个分块
+          console.log('请求第一个分块');
+          socket.emit('request-next-chunk', {
+            roomId: roomId,
+            chunkIndex: 0
+          });
+        } else {
+          // 小图片，直接获取
+          console.log('小图片，等待直接传输');
+          updateStatus('正在接收图片...', 'waiting');
+        }
+      } else {
+        console.log('房间内暂无图片，等待发送');
+        updateStatus('✓ 已连接，等待接收图片...', 'connected');
+      }
     });
 
     socket.on('receive-room-not-found', () => {

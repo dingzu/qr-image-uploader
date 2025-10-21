@@ -89,13 +89,38 @@ io.on('connection', (socket) => {
     if (rooms.has(roomId)) {
       const room = rooms.get(roomId);
       if (room.imageData) {
-        console.log(`发送已存在的图片到手机，大小: ${Math.round(room.imageData.length / 1024)}KB`);
-        socket.emit('image-sent-to-phone', { imageData: room.imageData });
+        console.log(`房间内有图片，大小: ${Math.round(room.imageData.length / 1024)}KB`);
+        
+        // 判断是否需要分块传输
+        if (room.chunks && room.chunks.length > 0) {
+          // 大图片，分块传输
+          console.log(`大图片，已分块，共 ${room.totalChunks} 块`);
+          socket.emit('room-image-info', {
+            hasImage: true,
+            isChunked: true,
+            totalChunks: room.totalChunks,
+            totalSize: room.imageData.length
+          });
+        } else {
+          // 小图片，直接发送
+          console.log(`小图片，直接发送`);
+          socket.emit('room-image-info', {
+            hasImage: true,
+            isChunked: false
+          });
+          socket.emit('image-sent-to-phone', { imageData: room.imageData });
+        }
       } else {
         console.log(`房间 ${roomId} 存在，但还没有图片数据`);
+        socket.emit('room-image-info', {
+          hasImage: false
+        });
       }
     } else {
       console.log(`房间 ${roomId} 不存在`);
+      socket.emit('room-image-info', {
+        hasImage: false
+      });
     }
   });
 
