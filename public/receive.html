@@ -160,6 +160,7 @@
       <img id="receivedImage" class="received-image" src="" alt="接收的图片">
       <div class="image-info" id="imageInfo"></div>
       <button class="btn" id="downloadBtn">📥 下载图片</button>
+      <button class="btn" id="openKimBtn" style="background: #4CAF50; color: white;">📱 在 Kim 中打开</button>
       <button class="btn" id="waitMoreBtn" style="background: white; color: #000;">继续等待更多图片</button>
     </div>
   </div>
@@ -175,6 +176,7 @@
     const receivedImage = document.getElementById('receivedImage');
     const imageInfo = document.getElementById('imageInfo');
     const downloadBtn = document.getElementById('downloadBtn');
+    const openKimBtn = document.getElementById('openKimBtn');
     const waitMoreBtn = document.getElementById('waitMoreBtn');
 
     // 从 URL 获取房间 ID
@@ -182,6 +184,50 @@
       const path = window.location.pathname;
       const match = path.match(/\/receive\/(.+)/);
       return match ? match[1] : null;
+    }
+    
+    // 调用 Kim App
+    function openInKim() {
+      // Kim App URL Scheme
+      const kimUrl = 'kim://thread?id=3968724776095836&type=4';
+      
+      console.log('尝试打开 Kim App:', kimUrl);
+      
+      // 方法1: 直接跳转
+      window.location.href = kimUrl;
+      
+      // 方法2: 如果方法1不工作，尝试使用 iframe（备用方案）
+      setTimeout(() => {
+        try {
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = kimUrl;
+          document.body.appendChild(iframe);
+          
+          // 清理 iframe
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 1000);
+        } catch (e) {
+          console.error('打开 Kim App 失败:', e);
+        }
+      }, 500);
+      
+      // 如果 App 没有安装，显示提示
+      const timeout = setTimeout(() => {
+        if (document.hidden) {
+          // App 已打开，页面进入后台
+          clearTimeout(timeout);
+        } else {
+          // App 可能没有安装
+          const confirmOpen = confirm('未检测到 Kim App，是否前往下载？');
+          if (confirmOpen) {
+            // 这里可以替换为 Kim App 的下载链接
+            // window.location.href = 'https://kim-app-download-url.com';
+            alert('请在应用商店搜索并下载 Kim App');
+          }
+        }
+      }, 2500);
     }
 
     // 更新状态
@@ -280,6 +326,7 @@
 
     // 按钮事件
     downloadBtn.addEventListener('click', downloadImage);
+    openKimBtn.addEventListener('click', openInKim);
     waitMoreBtn.addEventListener('click', waitForMore);
   </script>
 </body>

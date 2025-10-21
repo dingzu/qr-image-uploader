@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "扫码上传图片助手",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "在网页文件上传时,支持从移动端扫码上传图片",
   "permissions": [
     "storage",

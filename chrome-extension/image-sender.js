@@ -118,6 +118,9 @@
     btn.className = 'qr-image-sender-btn';
     btn.innerHTML = '📱 发送到手机';
     
+    // 添加忽略标记，防止触发文件上传拦截
+    btn.setAttribute('data-qr-upload-ignore', 'true');
+    
     // 样式
     btn.style.cssText = `
       padding: 8px 16px;
@@ -153,6 +156,7 @@
     btn.addEventListener('click', async function(e) {
       e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation(); // 阻止其他监听器
       
       console.log('Image Sender: 点击发送按钮', img.src);
       
@@ -255,10 +259,13 @@
     // 创建模态框
     const modal = document.createElement('div');
     modal.id = 'qr-image-sender-modal';
+    // 添加忽略标记，防止触发文件上传拦截
+    modal.setAttribute('data-qr-upload-ignore', 'true');
+    
     modal.innerHTML = `
-      <div class="qr-image-sender-overlay">
-        <div class="qr-image-sender-modal-content">
-          <button class="qr-image-sender-close" title="关闭">✕</button>
+      <div class="qr-image-sender-overlay" data-qr-upload-ignore="true">
+        <div class="qr-image-sender-modal-content" data-qr-upload-ignore="true">
+          <button class="qr-image-sender-close" data-qr-upload-ignore="true" title="关闭">✕</button>
           <h2 class="qr-image-sender-title">📱 扫码获取图片</h2>
           <p class="qr-image-sender-subtitle">使用手机扫描下方二维码</p>
           
