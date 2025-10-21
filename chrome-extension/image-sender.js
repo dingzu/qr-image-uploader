@@ -451,10 +451,14 @@
       
       // 监听手机加入房间
       socket.on('phone-joined-room', () => {
-        if (phoneJoined) return; // 避免重复处理
+        if (phoneJoined) {
+          console.log('Image Sender: 重复的 phone-joined-room 事件，忽略');
+          return;
+        }
         phoneJoined = true;
         
-        console.log('Image Sender: 手机已扫码！开始发送图片');
+        console.log('Image Sender: ✓ 手机已扫码！Socket ID:', socket.id);
+        console.log('Image Sender: 开始发送图片到房间:', roomId);
         
         // 更新状态
         if (statusEl) {
@@ -469,16 +473,17 @@
         }
         
         // 发送图片
-        console.log('Image Sender: 发送图片，大小:', Math.round(imageData.length / 1024), 'KB');
+        console.log('Image Sender: → 发送 send-image-to-phone 事件，图片大小:', Math.round(imageData.length / 1024), 'KB');
         socket.emit('send-image-to-phone', {
           roomId: roomId,
           imageData: imageData
         });
+        console.log('Image Sender: send-image-to-phone 事件已发送');
       });
       
       // 监听发送成功
       socket.on('image-send-success', () => {
-        console.log('Image Sender: 服务器确认图片已发送');
+        console.log('Image Sender: ✓ 服务器确认图片已接收并存储');
         if (statusEl) {
           statusEl.className = 'qr-image-sender-status success';
           statusEl.innerHTML = '<span>✓</span><span>等待手机接收...</span>';
@@ -519,6 +524,10 @@
           socket.disconnect();
           resolve();
         }, 2000);
+      });
+      
+      socket.on('disconnect', (reason) => {
+        console.warn('Image Sender: 连接断开，原因:', reason);
       });
       
       socket.on('connect_error', (error) => {
