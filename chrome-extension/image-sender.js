@@ -499,13 +499,17 @@
         }
       });
       
-      // 监听传输开始（服务器已发送分块给手机端）
+      // 监听传输开始（服务器准备好分块，等待接收端拉取）
       socket.on('image-transfer-start', (data) => {
-        console.log('Image Sender: 开始传输，总块数:', data.totalChunks);
+        console.log('Image Sender: 开始传输，总块数:', data.totalChunks, '总大小:', Math.round(data.totalSize / 1024), 'KB');
         
         const progressContainer = document.querySelector('.qr-image-sender-progress-container');
+        const progressText = document.querySelector('.qr-image-sender-progress-text');
         if (progressContainer) {
           progressContainer.style.display = 'block';
+        }
+        if (progressText) {
+          progressText.textContent = '等待接收端拉取数据...';
         }
       });
       

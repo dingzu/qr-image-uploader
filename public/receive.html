@@ -343,9 +343,9 @@
 
     // 监听传输开始
     socket.on('image-transfer-start', (data) => {
-      console.log('开始接收图片，总块数:', data.totalChunks);
+      console.log('开始接收图片，总块数:', data.totalChunks, '总大小:', Math.round(data.totalSize / 1024), 'KB');
       totalChunks = data.totalChunks;
-      receivedChunks = [];
+      receivedChunks = new Array(totalChunks); // 预分配数组
       
       // 显示进度条
       progressContainer.style.display = 'block';
@@ -353,11 +353,18 @@
       progressText.textContent = '接收中... 0%';
       
       updateStatus('正在接收图片...', 'waiting');
+      
+      // 开始请求第一个分块
+      console.log('请求第一个分块');
+      socket.emit('request-next-chunk', {
+        roomId: roomId,
+        chunkIndex: 0
+      });
     });
     
     // 监听分块数据
     socket.on('image-chunk', (data) => {
-      console.log('收到分块:', data.chunkIndex + 1, '/', data.totalChunks);
+      console.log('收到分块:', data.chunkIndex + 1, '/', data.totalChunks, '大小:', Math.round(data.chunk.length / 1024), 'KB');
       
       // 存储分块
       receivedChunks[data.chunkIndex] = data.chunk;
@@ -375,10 +382,24 @@
         totalChunks: data.totalChunks
       });
       
-      // 如果是最后一块，组合所有分块
-      if (data.isLastChunk) {
+      // 如果不是最后一块，请求下一块
+      if (!data.isLastChunk) {
+        const nextIndex = data.chunkIndex + 1;
+        console.log('请求下一个分块:', nextIndex);
+        
+        // 延迟一小段时间，避免请求过快
+        setTimeout(() => {
+          socket.emit('request-next-chunk', {
+            roomId: roomId,
+            chunkIndex: nextIndex
+          });
+        }, 10); // 10ms 延迟
+      } else {
+        // 最后一块，组合所有分块
         console.log('接收完成，组合图片数据');
         const fullImageData = receivedChunks.join('');
+        
+        console.log('组合后的图片大小:', Math.round(fullImageData.length / 1024), 'KB');
         
         // 显示图片
         showReceivedImage(fullImageData);
@@ -391,6 +412,13 @@
         // 通知服务器：手机已收到图片
         socket.emit('phone-received-image', roomId);
       }
+    });
+    
+    // 监听传输错误
+    socket.on('transfer-error', (data) => {
+      console.error('传输错误:', data.message);
+      updateStatus('传输失败: ' + data.message, 'error');
+      progressContainer.style.display = 'none';
     });
     
     // 接收小图片（直接传输）
